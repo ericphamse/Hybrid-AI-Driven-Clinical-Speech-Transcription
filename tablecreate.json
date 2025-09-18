@@ -10,7 +10,7 @@
             {
                 "noteId": "PN_25_000001",
                 "timestamp": "2025-01-01T12:49:59",
-                "peopleInvoled": ["Dr. Smith"],
+                "peopleInvolved": ["Dr. Smith"],
                 "context": "Full transcribed text will go here"
 
             }
@@ -33,5 +33,6 @@
         ]
 
     }
+
 
 }
