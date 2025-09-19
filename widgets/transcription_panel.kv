@@ -1,0 +1,56 @@
+<TranscriptionPanel>:
+    orientation: 'vertical'
+    spacing: 20
+    padding: [10, 10]
+    canvas.before:
+        Color:
+            rgba: 0.97, 0.97, 0.97, 1
+        Rectangle:
+            size: self.size
+            pos: self.pos
+
+    Button:
+        text: root.is_recording and 'STOP' or 'RECORD'
+        size_hint_y: None
+        height: 60
+        font_size: 22
+        background_color: root.is_recording and (0.7, 0.1, 0.1, 1) or (0.1, 0.2, 0.3, 1)
+        color: 1, 1, 1, 1
+        bold: True
+        on_press: root.record_action()
+        canvas.before:
+            Color:
+                rgba: root.is_recording and (0.7, 0.1, 0.1, 1) or (0.1, 0.2, 0.3, 1)
+            RoundedRectangle:
+                size: self.size
+                pos: self.pos
+                radius: [8]
+
+    TextInput:
+        id: transcription_input
+        hint_text: 'Your transcribed text will appear here...'
+        multiline: True
+        font_size: 18
+        background_color: 0.98, 0.98, 0.98, 1
+        foreground_color: 0.2, 0.2, 0.2, 1
+        size_hint_y: 1
+        padding: [10, 10]
+        disabled: False
+        readonly: False
+
+    Button:
+        text: 'Generate Report'
+        size_hint_y: None
+        height: 60
+        font_size: 20
+        background_color: 0.1, 0.3, 0.2, 1
+        color: 1, 1, 1, 1
+        disabled: root.is_recording or transcription_input.text == ''
+        on_press: root.generate_report_action()
+        canvas.before:
+            Color:
+                rgba: 0.1, 0.3, 0.2, 1
+            RoundedRectangle:
+                size: self.size
+                pos: self.pos
+                radius: [8]

@@ -1,0 +1,43 @@
+<TopBar>:
+    orientation: 'horizontal'
+    size_hint_y: None
+    height: 60
+    padding: [40, 0, 40, 0]
+    spacing: 0
+    canvas.before:
+        Color:
+            rgba: 0.89, 0.89, 0.92, 1
+        Rectangle:
+            size: self.size
+            pos: self.pos
+
+    Label:
+        text: 'Status: ' + root.network_status
+        font_size: 16
+        bold: True
+        color: root.network_status == 'Online' and (0.1, 0.7, 0.3, 1) or (0.7, 0.1, 0.1, 1)
+        halign: 'left'
+        valign: 'middle'
+        text_size: self.size
+        size_hint_x: 0.18
+
+    Label:
+        text: 'Medical Transcription App'
+        font_size: 22
+        bold: True
+        color: 0.1, 0.1, 0.1, 1
+        halign: 'center'
+        valign: 'middle'
+        text_size: self.size
+        size_hint_x: 0.64
+
+    Button:
+        text: 'Logout'
+        size_hint_x: None
+        width: 90
+        font_size: 16
+        bold: True
+        background_color: 0, 0, 0, 0
+        color: 0.2, 0.2, 0.2, 1
+        on_press: root.logout()
+        padding: [0, 0]
