@@ -1,0 +1,117 @@
+
+<ReportEntry>:
+    orientation: 'vertical'
+    size_hint_y: None
+    height: self.minimum_height
+    padding: [10, 5]
+    spacing: 5
+    canvas.before:
+        Color:
+            rgba: 0.95, 0.95, 0.95, 1
+        Rectangle:
+            size: self.size
+            pos: self.pos
+    BoxLayout:
+        orientation: 'vertical'
+        size_hint_y: None
+        height: self.minimum_height
+        spacing: 4
+        Label:
+            text: root.timestamp_str.replace('T', ' ')
+            font_size: 14
+            color: 0.3, 0.3, 0.3, 1
+            size_hint_x: None
+            size_hint_y: None
+            text_size: self.width, None
+            halign: 'left'
+            valign: 'top'
+            height: self.texture_size[1] + 8
+        TextInput:
+            id: entry_textinput
+            text: root.context if root.context else (root.other_observations if root.other_observations else root.medication_info)
+            font_size: 16
+            foreground_color: 0.1, 0.1, 0.1, 1
+            background_color: 0.98, 0.98, 0.98, 1
+            multiline: True
+            size_hint_x: 1
+            size_hint_y: None
+            height: self.minimum_height
+            padding: [6, 6]
+            text_size: self.width, None
+            halign: 'left'
+            valign: 'top'
+    # Removed invalid height expression. Let children expand naturally.
+    Widget:
+        size_hint_y: None
+        height: 8
+        canvas.before:
+            Color:
+                rgba: 0.7, 0.7, 0.7, 1
+            Rectangle:
+                size: self.size
+                pos: self.pos
+
+<StructuringPanel>:
+    orientation: 'vertical'
+    padding: [10, 10]
+    spacing: 10
+    Label:
+        text: 'Structured Report'
+        font_size: 24
+        bold: True
+        size_hint_y: None
+        height: 40
+        color: 0.1, 0.1, 0.1, 1
+    Label:
+        text: 'Name of Clinician: [b]' + root.clinician_name + '[/b]'
+        font_size: 16
+        size_hint_y: None
+        height: 30
+        color: 0.2, 0.2, 0.2, 1
+        markup: True
+    BoxLayout:
+        size_hint_y: None
+        height: 40
+        spacing: 0
+        canvas.before:
+            Color:
+                rgba: 0.7, 0.7, 0.7, 1
+            Rectangle:
+                size: self.size
+                pos: self.pos
+        Button:
+            text: 'Progress Note'
+            background_color: root.tab_index == 0 and (0.2, 0.4, 0.6, 1) or (0.8, 0.8, 0.8, 1)
+            color: 1, 1, 1, 1
+            on_press: root.switch_tab(0)
+        Button:
+            text: 'Patient Observation'
+            background_color: root.tab_index == 1 and (0.2, 0.4, 0.6, 1) or (0.8, 0.8, 0.8, 1)
+            color: 1, 1, 1, 1
+            on_press: root.switch_tab(1)
+        Button:
+            text: 'Medicine Administered'
+            background_color: root.tab_index == 2 and (0.2, 0.4, 0.6, 1) or (0.8, 0.8, 0.8, 1)
+            color: 1, 1, 1, 1
+            on_press: root.switch_tab(2)
+    ScrollView:
+        GridLayout:
+            id: report_log
+            cols: 1
+            size_hint_y: None
+            height: self.minimum_height
+    BoxLayout:
+        size_hint_y: None
+        height: 50
+        spacing: 10
+        Button:
+            text: 'Delete Session'
+            background_color: 1, 0.2, 0.2, 1
+            color: 1, 1, 1, 1
+            on_press: root.confirm_delete()
+            disabled: not (root.progress_notes or root.patient_observations or root.medications)
+        Button:
+            text: 'Save Session'
+            background_color: 0.2, 0.6, 0.2, 1
+            color: 1, 1, 1, 1
+            disabled: not (root.progress_notes or root.patient_observations or root.medications)

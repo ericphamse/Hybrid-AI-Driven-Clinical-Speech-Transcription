@@ -1,0 +1,50 @@
+{
+  "userId": "clinician_01",
+  "timestamp": "2025-09-18T14:30:00",
+  "rawTranscriptionId": "On arrival, patient was found lying supine on the verandah, complaining of severe central chest pain radiating to the left arm for the past forty-five minutes. Pain onset occurred while she was herding cattle. Initial vitals at 14:20 hours: Heart rate 118 beats per minute, sinus tachycardia Blood pressure 96 over 64 millimetres of mercury Respiratory rate 28 breaths per minute Oxygen saturation 89 percent on room air Temperature 37.4 degrees Celsius.",
+  "isOnline": true,
+  "isOffline": false,
+  "medicalNoteStructure": {
+    "progressNote": [
+      {
+        "noteId": "PN_25_00001",
+        "timestamp": "2025-09-18T14:32:15",
+        "peopleInvolved": [
+          "Dr. Evelyn Reed"
+        ],
+        "context": "On arrival, patient was found lying supine on the verandah, complaining of severe central chest pain radiating to the left arm for the past forty-five minutes. Pain onset occurred while she was herding cattle. Initial vitals at 14:20 hours: Heart rate 118 beats per minute, sinus tachycardia Blood pressure 96 over 64 millimetres of mercury Respiratory rate 28 breaths per minute Oxygen saturation 89 percent on room air Temperature 37.4 degrees Celsius. "
+      },
+      {
+        "noteId": "PN_25_00002",
+        "timestamp": "2025-09-18T14:45:30",
+        "peopleInvolved": [
+          "Dr. Evelyn Reed"
+        ],
+        "context": "Patient's pain has subsided following administration of analgesia. Patient remains stable during transport. Preparing for handover at the emergency department."
+      }
+    ],
+    
+    "patientObservations": [
+      {
+        "observationId": "PO_25_00001",
+        "timestamp": "2025-09-18T14:33:05",
+        "otherObservations": "Initial Vitals - BP: 96/64, Heart Rate: 28, SpO2: 89% on room air. Temperature: 37.4C."
+      },
+      {
+        "observationId": "PO_25_00002",
+        "timestamp": "2025-09-18T14:46:10",
+        "otherObservations": "Follow-up Vitals - BP: 130/85, Heart Rate: 85. Patient reports pain level is now 3/10."
+      }
+    ],
+    "medicationAdministered": [
+      {
+        "medicationId": "MA_25_00001",
+        "timestamp": "2025-09-18T14:38:45",
+        "medicineType": "Analgesic",
+        "medicineName": "Fentanyl",
+        "quantity": "50mcg",
+        "administrationType": "Intravenous (IV)"
+      }
+    ]
+  }
+}
