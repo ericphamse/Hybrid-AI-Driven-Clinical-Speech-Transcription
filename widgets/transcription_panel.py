@@ -1,6 +1,8 @@
 
+
 import os
 import json
+from audioservice import AudioService
 
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import BooleanProperty
@@ -8,11 +10,19 @@ from kivy.app import App
 from kivy.clock import Clock
 
 class TranscriptionPanel(BoxLayout):
+    audio_service = AudioService()
     is_recording = BooleanProperty(False)
 
     def record_action(self):
         self.is_recording = not self.is_recording
-        if not self.is_recording:
+        if self.is_recording:
+            # Start recording audio
+            self.audio_service.start_recording()
+            print("TranscriptionPanel: Audio recording started.")
+        else:
+            # Stop recording audio and save to .wav
+            wav_path = self.audio_service.stop_recording()
+            print(f"TranscriptionPanel: Audio recording stopped. WAV saved at {wav_path}")
             def set_text(dt):
                 json_path = os.path.join('datastore', 'sampledata.json')
                 if os.path.exists(json_path):
