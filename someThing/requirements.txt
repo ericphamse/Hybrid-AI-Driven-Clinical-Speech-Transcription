@@ -1,0 +1,6 @@
+kivy==2.3.0
+pyaudio
+numpy
+noisereduce
+vosk
+ctransformers

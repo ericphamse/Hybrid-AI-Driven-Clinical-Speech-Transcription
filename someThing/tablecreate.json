@@ -1,0 +1,38 @@
+{
+    "userId": "string",
+    "timestamp": "2025-01-01T23:59:59",
+    "rawTranscriptionId": "Full transcribed text will go here",
+    "isOnline": false,
+    "isOffline": true,
+    
+    "medicalNoteStructure": {
+        "progressNote": [
+            {
+                "noteId": "PN_25_000001",
+                "timestamp": "2025-01-01T12:49:59",
+                "peopleInvolved": ["Dr. Smith"],
+                "context": "Full transcribed text will go here"
+
+            }
+        ],
+        "patientObservations": [
+            {
+                "observationId": "PO_25_000001",
+                "timestamp":"2025-01-01T12:49:59",
+                "otherObservations": "Patient alerted and disoriented, mild distress"
+            }
+        ],
+        "medicationAdministered": [
+            {
+                "medicationId": "MA_25_000001",
+                "timestamp": "2025-01-01T12:49:59",
+                "medicineType": "Aspirin",
+                "quantity": "200mg",
+                "administrationType": "oral"
+            }
+        ]
+
+    }
+
+
+}
