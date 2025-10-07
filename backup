@@ -11,7 +11,6 @@ import time
 import wave
 import pyaudio
 import numpy as np
-import io
 
 class TranscriptionPanel(BoxLayout):
     is_recording = BooleanProperty(False)
@@ -24,8 +23,6 @@ class TranscriptionPanel(BoxLayout):
         self.audio_data = []
         self.p = None
         self.stream = None
-        self.max_recording_time = 300  # 5 minutes max
-        self.recording_start_time = None
         print(f"🎤 TranscriptionPanel initialized with AWS integration")
     
     def record_action(self):
@@ -38,24 +35,19 @@ class TranscriptionPanel(BoxLayout):
             self.start_recording()
     
     def start_recording(self):
-        """Start audio recording with better error handling"""
+        """Start audio recording"""
         try:
             self.is_recording = True
             self.audio_data = []
-            self.recording_start_time = time.time()
             
-            # Initialize PyAudio with better settings
+            # Initialize PyAudio
             self.p = pyaudio.PyAudio()
-            
-            # Use smaller buffer for better real-time performance
             self.stream = self.p.open(
                 format=pyaudio.paInt16,
                 channels=1,
                 rate=16000,
                 input=True,
-                frames_per_buffer=512,  # Smaller buffer
-                input_device_index=None,
-                stream_callback=None
+                frames_per_buffer=1024
             )
             
             # Start recording in a separate thread
@@ -67,74 +59,41 @@ class TranscriptionPanel(BoxLayout):
         except Exception as e:
             print(f"❌ Error starting recording: {e}")
             self.is_recording = False
-            self.cleanup_audio()
     
     def _record_audio(self):
-        """Record audio data with memory management"""
+        """Record audio data"""
         try:
-            chunk_count = 0
             while self.is_recording:
-                # Check max recording time
-                if time.time() - self.recording_start_time > self.max_recording_time:
-                    print(f"⏰ Max recording time ({self.max_recording_time}s) reached, stopping...")
-                    self.is_recording = False
-                    break
-                
-                try:
-                    # Read audio data with exception handling
-                    data = self.stream.read(512, exception_on_overflow=False)
-                    self.audio_data.append(data)
-                    
-                    chunk_count += 1
-                    
-                    # Memory management: limit chunks to prevent memory overflow
-                    # For 16kHz, 512 samples = ~32ms per chunk
-                    # 5 minutes = ~9375 chunks, so limit to 10000 chunks
-                    if chunk_count > 10000:
-                        print("⚠️ Recording too long, auto-stopping to prevent memory issues...")
-                        self.is_recording = False
-                        break
-                        
-                    # Optional: Print progress every 5 seconds
-                    if chunk_count % 1562 == 0:  # ~5 seconds at 16kHz/512
-                        duration = time.time() - self.recording_start_time
-                        print(f"🎙️ Recording... {duration:.1f}s ({len(self.audio_data)} chunks)")
-                        
-                except OSError as e:
-                    if "Input overflowed" in str(e):
-                        print("⚠️ Input overflow (audio buffer full), continuing...")
-                        continue
-                    else:
-                        print(f"❌ Audio read error: {e}")
-                        break
-                        
+                data = self.stream.read(1024, exception_on_overflow=False)
+                self.audio_data.append(data)
         except Exception as e:
             print(f"❌ Recording error: {e}")
-            self.is_recording = False
     
     def stop_recording_and_send_to_aws(self):
-        """Stop recording and send to AWS pipeline with better cleanup"""
+        """Stop recording and send to AWS pipeline"""
         try:
             self.is_recording = False
             
-            # Wait for recording thread to finish
-            if self.recording_thread and self.recording_thread.is_alive():
-                self.recording_thread.join(timeout=2)
-            
-            self.cleanup_audio()
+            if self.stream:
+                self.stream.stop_stream()
+                self.stream.close()
+            if self.p:
+                self.p.terminate()
             
             if not self.audio_data:
                 print("⚠️ No audio data recorded")
                 return
             
-            duration = time.time() - self.recording_start_time if self.recording_start_time else 0
-            print(f"🎵 Recorded {len(self.audio_data)} chunks ({duration:.1f}s)")
-            
-            # Save audio to file with better memory handling
+            # Save audio to file
             timestamp = int(time.time())
             filename = f"recording_{timestamp}.wav"
             
-            self.save_audio_to_file(filename)
+            # Write WAV file
+            with wave.open(filename, 'wb') as wf:
+                wf.setnchannels(1)
+                wf.setsampwidth(2)  # 16-bit
+                wf.setframerate(16000)
+                wf.writeframes(b''.join(self.audio_data))
             
             print(f"💾 Audio saved to {filename}")
             
@@ -148,58 +107,11 @@ class TranscriptionPanel(BoxLayout):
             
         except Exception as e:
             print(f"❌ Error stopping recording: {e}")
-            self.cleanup_audio()
-    
-    def save_audio_to_file(self, filename):
-        """Save audio data to WAV file with memory optimization"""
-        try:
-            with wave.open(filename, 'wb') as wf:
-                wf.setnchannels(1)
-                wf.setsampwidth(2)  # 16-bit
-                wf.setframerate(16000)
-                
-                # Write audio data in chunks to avoid memory issues
-                for chunk in self.audio_data:
-                    wf.writeframes(chunk)
-                    
-            # Clear audio data from memory
-            self.audio_data = []
-            print(f"💾 Audio file saved and memory cleared")
-            
-        except Exception as e:
-            print(f"❌ Error saving audio file: {e}")
-            raise
-    
-    def cleanup_audio(self):
-        """Clean up audio resources"""
-        try:
-            if self.stream:
-                if not self.stream.is_stopped():
-                    self.stream.stop_stream()
-                self.stream.close()
-                self.stream = None
-                
-            if self.p:
-                self.p.terminate()
-                self.p = None
-                
-            print("🧹 Audio resources cleaned up")
-            
-        except Exception as e:
-            print(f"⚠️ Error cleaning up audio: {e}")
     
     def send_to_aws_pipeline(self, filename):
         """Send audio file through AWS pipeline: S3 -> Transcribe -> Medical"""
         try:
             print(f"📤 Sending {filename} to AWS pipeline...")
-            
-            # Check file size
-            file_size = os.path.getsize(filename)
-            print(f"📊 File size: {file_size / 1024 / 1024:.2f} MB")
-            
-            # AWS Transcribe has file size limits (500MB for medical)
-            if file_size > 400 * 1024 * 1024:  # 400MB limit for safety
-                raise Exception(f"File too large ({file_size / 1024 / 1024:.2f} MB). Max 400MB.")
             
             # Method 1: Use your backend if it's running
             if self.send_via_backend(filename):
@@ -216,11 +128,9 @@ class TranscriptionPanel(BoxLayout):
         finally:
             # Clean up the file
             try:
-                if os.path.exists(filename):
-                    os.remove(filename)
-                    print(f"🗑️ Cleaned up {filename}")
-            except Exception as e:
-                print(f"⚠️ Error cleaning up file: {e}")
+                os.remove(filename)
+            except:
+                pass
     
     def send_via_backend(self, filename):
         """Try to send via your Flask backend first"""
@@ -228,18 +138,13 @@ class TranscriptionPanel(BoxLayout):
             # Check if backend is running
             response = requests.get(f"{self.backend_url}/", timeout=2)
             
-            # Send file to backend with timeout based on file size
-            file_size_mb = os.path.getsize(filename) / 1024 / 1024
-            timeout = max(300, int(file_size_mb * 10))  # 10 seconds per MB, min 5 minutes
-            
-            print(f"📤 Sending {file_size_mb:.2f}MB file with {timeout}s timeout...")
-            
+            # Send file to backend
             with open(filename, 'rb') as audio_file:
                 files = {'file': (filename, audio_file, 'audio/wav')}
                 response = requests.post(
                     f"{self.backend_url}/transcribe",
                     files=files,
-                    timeout=timeout
+                    timeout=300
                 )
             
             if response.status_code == 200:
@@ -253,13 +158,7 @@ class TranscriptionPanel(BoxLayout):
                         lambda dt: self.update_transcription_display(raw_transcript)
                     )
                     return True
-            else:
-                print(f"❌ Backend HTTP error: {response.status_code}")
-                return False
                     
-        except requests.exceptions.Timeout:
-            print(f"⏰ Backend request timed out (file too large or slow processing)")
-            return False
         except Exception as e:
             print(f"⚠️ Backend not available: {e}")
             return False
@@ -384,57 +283,34 @@ class TranscriptionPanel(BoxLayout):
         """Update the transcription text display"""
         try:
             print(f"📝 Updating UI with: {text[:100]}...")
-            print(f"🔍 Widget has ids: {hasattr(self, 'ids')}")
-            print(f"🔍 Available IDs: {list(self.ids.keys()) if hasattr(self, 'ids') else 'None'}")
             
             # Try to update by ID
             if hasattr(self.ids, 'transcription_text'):
-                print(f"✅ Found transcription_text widget!")
-                old_text = self.ids.transcription_text.text
                 self.ids.transcription_text.text = text
-                new_text = self.ids.transcription_text.text
-                print(f"📝 Changed from: '{old_text[:50]}...' to: '{new_text[:50]}...'")
                 print(f"✅ Updated transcription display")
                 return
-            else:
-                print(f"❌ transcription_text widget not found in IDs")
             
-            # Fallback search - with more debugging
-            print(f"🔍 Starting widget tree search...")
-            def find_text_widget(widget, depth=0):
-                indent = "  " * depth
-                widget_type = type(widget).__name__
-                print(f"{indent}{widget_type}")
-                
+            # Fallback search
+            def find_text_widget(widget):
                 if hasattr(widget, 'text'):
                     current_text = str(widget.text)
-                    print(f"{indent}  Has text: '{current_text[:30]}...'")
-                    
                     if ('Your transcribed text will appear here' in current_text or 
                         'transcribed text will appear' in current_text or
                         '🎤 Processing' in current_text):
-                        print(f"{indent}  ✅ FOUND TARGET WIDGET!")
                         return widget
                 
-                # Check children
-                if hasattr(widget, 'children'):
-                    print(f"{indent}  Children: {len(widget.children)}")
-                    for i, child in enumerate(widget.children):
-                        print(f"{indent}  Child {i}:")
-                        result = find_text_widget(child, depth + 1)
-                        if result:
-                            return result
+                for child in widget.children:
+                    result = find_text_widget(child)
+                    if result:
+                        return result
                 return None
             
             text_widget = find_text_widget(self)
             if text_widget:
-                old_text = text_widget.text
                 text_widget.text = text
-                print(f"✅ Updated via search: '{old_text[:30]}...' -> '{text[:30]}...'")
+                print(f"✅ Updated transcription display via search")
             else:
-                print("❌ Could not find any text widget to update")
+                print("❌ Could not find text widget")
                 
         except Exception as e:
             print(f"❌ Error updating display: {e}")
-            import traceback
-            traceback.print_exc()
