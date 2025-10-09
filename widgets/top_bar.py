@@ -1,11 +1,12 @@
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import StringProperty
+from kivy.properties import BooleanProperty
 from kivy.app import App
 import socket
 import threading
 
 class TopBar(BoxLayout):
-    network_status = StringProperty('Checking...')
+    network_status = BooleanProperty(False)
     clinician_name = StringProperty('')
 
     def __init__(self, **kwargs):
@@ -17,9 +18,9 @@ class TopBar(BoxLayout):
             try:
                 # Try to connect to a public DNS server
                 socket.create_connection(("8.8.8.8", 53), timeout=2)
-                self.network_status = 'Online'
+                self.network_status = True
             except Exception:
-                self.network_status = 'Offline'
+                self.network_status = False
         threading.Thread(target=check, daemon=True).start()
 
     def logout(self):

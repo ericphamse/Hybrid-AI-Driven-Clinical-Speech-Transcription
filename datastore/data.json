@@ -1,0 +1,46 @@
+{
+    "transcriptionId": "ab423d13-85e1-4bf6-bca4-bf8dc601e1a6",
+    "timestamp": "2025-10-09T15:17:24",
+    "rawTranscriptionId": "WhatsThisFor?",
+    "isOnline": false,
+    "isOffline": true,
+    "medicalNoteStructure": {
+        "progressNote": [
+            {
+                "noteId": 13,
+                "timestamp": "2025-10-09T15:17:45",
+                "context": "Patient was found lying unconscious with heart rate of 86 and blood pressure of 120 over 80",
+                "peopleInvolved": "asd"
+            },
+            {
+                "noteId": 14,
+                "timestamp": "2025-10-09T15:20:25",
+                "context": "Administered patient with 25 mg of paracetamol",
+                "peopleInvolved": "asd"
+            }
+        ],
+        "patientObservation": [
+            {
+                "observationId": 13,
+                "timestamp": "2025-10-09T15:17:45",
+                "ObservationNote": "BP: 120/80\nBPM: 86\n"
+            }
+        ],
+        "medicationAdministered": [
+            {
+                "medicationId": 12,
+                "timestamp": "2025-10-09T15:17:45",
+                "medicineType": null,
+                "quantity": "None",
+                "administrationType": "Not mentioned"
+            },
+            {
+                "medicationId": 13,
+                "timestamp": "2025-10-09T15:20:25",
+                "medicineType": "paracetamol",
+                "quantity": "25mg",
+                "administrationType": "Not mentioned"
+            }
+        ]
+    }
+}
