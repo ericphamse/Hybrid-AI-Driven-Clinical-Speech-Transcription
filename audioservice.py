@@ -1,6 +1,10 @@
 
 import pyaudio
 import wave
+import time
+import requests
+import boto3
+from kivy.clock import Clock
 import numpy as np
 from scipy.signal import resample_poly
 import threading
@@ -18,6 +22,7 @@ class RecordingEventHandler(FileSystemEventHandler):
     """
     def __init__(self, audio_service):
         self.audio_service = audio_service
+
 # Redundant
     # def on_created(self, event, on_complete=None):
     #     """Called when a file or directory is created."""
@@ -72,6 +77,7 @@ class RecordingEventHandler(FileSystemEventHandler):
 class AudioService:
     def __init__(self):
         # --- Audio Configuration ---
+        
         self.CHUNK = 480
         self.FORMAT = pyaudio.paInt16
         self.CHANNELS = 1

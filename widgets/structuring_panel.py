@@ -1,14 +1,15 @@
 
 import json
-from pydantic import BaseModel, Field
 import outlines
+import os
+from kivy.clock import Clock
+from pydantic import BaseModel, Field
 from widgets.database import LocalDatabase
 from datetime import datetime
 from llama_cpp import Llama
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import StringProperty, ListProperty, NumericProperty
 from kivy.app import App
-import os
 from outlines import generator
 from sympy.ntheory import generate
 from llama_cpp.server.types import max_tokens_field
@@ -54,7 +55,140 @@ class StructuringPanel(BoxLayout):
     medications = ListProperty([])
     clinician_name = StringProperty('')
 
-    
+    def format_with_claude(self, bedrock, ai, transcript_text, tids, globalTime):
+        prompt = f"""
+    You are a medical assistant AI. Take the raw transcript and convert it into JSON
+    following this schema exactly.
+
+    Rules:
+    - Extract only real values from the transcript.
+    - If information is missing, set the field to null or "".
+    - Do not add examples or placeholders.
+    - Return only valid JSON, nothing else.
+
+    Schema:
+    {{
+        "medicalNoteStructure": {{
+            "progressNote": [
+                {{
+                    "otherObservations": {transcript_text}
+                }}
+            ],
+            "patientObservations": [
+                {{
+                    "bloodPressure": ,
+                    "oxygenLevel": ,
+                    "heartBeat": ,
+                    "temperature":
+                }}
+            ],
+            "medicationAdministered": [
+                {{
+                    "medicineType": ,
+                    "quantity": ,
+                    "unit": ,
+                    "administrationType":
+                }}
+            ]
+        }}
+    }}
+
+    Raw transcript:
+    {transcript_text}
+    """
+
+        response = bedrock.invoke_model(
+            modelId=ai,
+            accept="application/json",
+            contentType="application/json",
+            body=json.dumps({
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 2000,
+                "temperature": 0,
+                "messages": [
+                {"role": "user", "content": prompt}
+            ]
+        })
+    )
+
+        raw_output = response["body"].read().decode("utf-8")
+        result = json.loads(raw_output)
+        structured_text = result["content"][0]["text"].strip()
+        if structured_text.startswith("```"):
+            structured_text = structured_text.replace("```json", "").replace("```", "").strip()
+        result = json.loads(structured_text)
+        print(result)
+        time_string = datetime.now().isoformat(timespec='seconds')
+        bp = result["medicalNoteStructure"]["patientObservations"][0]["bloodPressure"]
+        o2 = result["medicalNoteStructure"]["patientObservations"][0]["oxygenLevel"]
+        bpm = result["medicalNoteStructure"]["patientObservations"][0]["heartBeat"]
+        temp = result["medicalNoteStructure"]["patientObservations"][0]["temperature"]
+        wholeString = ''
+        if bp is not None:
+            wholeString += f"BP: {bp}"
+        if o2 is not None:
+            if not wholeString:
+                wholeString += f"O2: {o2}"
+            else:
+                wholeString += f"\nO2: {o2}"
+        if bpm is not None:
+            if not wholeString:
+                wholeString += f"BPM: {str(bpm)}\n"
+            else:
+                wholeString += f"\nBPM: {str(bpm)}\n"
+        if temp is not None:
+            if not wholeString:
+                wholeString += f"Celsius: {str(temp)}"
+            else:
+                wholeString += f"\nCelsius: {str(temp)}"
+        
+        po = {}
+        po["transcriptionId"] = tids
+        po["timestamp"] = time_string
+        po["otherObservations"] = wholeString
+        
+        #Combine into medicationAdministered
+        wholeString = str(result["medicalNoteStructure"]["medicationAdministered"][0]["quantity"])
+        if result["medicalNoteStructure"]["medicationAdministered"][0]["unit"] is not None:
+            wholeString += result["medicalNoteStructure"]["medicationAdministered"][0]["unit"]
+        ma = {}
+        ma["transcriptionId"] = tids
+        ma["timestamp"] = time_string
+        ma["medicineType"] = result["medicalNoteStructure"]["medicationAdministered"][0]["medicineType"]
+        ma["quantity"] = wholeString
+        ma["administrationType"] = result["medicalNoteStructure"]["medicationAdministered"][0]["administrationType"]
+        
+        self.load_clinician_name()
+        #Combine generic info
+        pn = {}
+        pn["transcriptionId"] = tids
+        pn["timestamp"] = time_string
+        pn["context"] = transcript_text
+        pn["peopleInvolved"] = self.clinician_name
+        
+        
+        allData = {}
+        allData["transcriptionId"] = tids
+        allData["userId"] = "test"
+        allData["timestamp"] = globalTime
+        allData["rawTranscriptionId"] = "WhatsThisFor?"
+        allData["isOnline"] = False
+        allData["isOffline"] = True
+        allData["medicalNoteStructure"] = {}
+        allData["medicalNoteStructure"]["progressNote"] = pn
+        allData["medicalNoteStructure"]["patientObservation"] = po
+        allData["medicalNoteStructure"]["medicationAdministered"] = ma
+        db = LocalDatabase
+        db.save_transcription_session(tids, allData)
+        
+        #then you convert the entire db into the json. (God had left my soul)
+        db.get_session_details(tids)
+
+        
+        # try:
+        #     return json.loads(structured_text)
+        # except json.JSONDecodeError:
+        #     return {"error": "invalid_json", "raw_text": structured_text}
     def generate_json(self, text, tids, globalTime):
         from pydantic import BaseModel, Field
         from outlines import models
@@ -311,7 +445,77 @@ class StructuringPanel(BoxLayout):
                     medication_info=med_info
                 )
                 self.ids.report_log.add_widget(widget)
+                
+    def send_to_aws(self):
+        # """Stop recording and send to AWS pipeline with better cleanup"""
+        # try:
+        #     self.is_recording = False
+        #
+        #     # Wait for recording thread to finish
+        #     if self.recording_thread and self.recording_thread.is_alive():
+        #         self.recording_thread.join(timeout=2)
+        #
+        #     self.cleanup_audio()
+        #
+        #     if not self.audio_data:
+        #         print("⚠️ No audio data recorded")
+        #         return
+        #
+        #     duration = time.time() - self.recording_start_time if self.recording_start_time else 0
+        #     print(f"🎵 Recorded {len(self.audio_data)} chunks ({duration:.1f}s)")
+        #
+        #     # Save audio to file with better memory handling
+        #     timestamp = int(time.time())
+        #     filename = f"recording_{timestamp}.wav"
+        #
+        #     self.save_audio_to_file(filename)
+        #
+        #     print(f"💾 Audio saved to {filename}")
+            
+            # Show processing message
+        Clock.schedule_once(
+            # lambda dt: self.update_transcription_display("🎤 Processing with AWS... Please wait...")
+        )
+            
+        # Send to AWS in background thread
+        # threading.Thread(target=self.send_to_aws_pipeline, args=(filename,), daemon=True).start()
+            
+        # except Exception as e:
+        #     print(f"❌ Error stopping recording: {e}")
+        #     self.cleanup_audio()
+                
+                
 
+    
+    def generate_report_action(self):
+        """Handle generate report button press"""
+        print("📊 Generate report requested")
+        
+        try:
+            if hasattr(self.ids, 'transcription_text'):
+                text_content = self.ids.transcription_text.text
+                if text_content and text_content != "Your transcribed text will appear here...":
+                    print(f"📋 Processing report for: {text_content[:100]}...")
+                    # Here you can add Claude processing for structured data
+                else:
+                    print("⚠️ No transcript text to process")
+            else:
+                print("⚠️ No transcription_text widget found")
+                
+        except Exception as e:
+            print(f"❌ Error in generate_report_action: {e}")
+    
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
     def switch_tab(self, idx):
         self.tab_index = idx
         self.update_log_display()
