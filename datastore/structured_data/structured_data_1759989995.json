@@ -1,0 +1,35 @@
+{
+  "userId": null,
+  "timestamp": "1759989971",
+  "rawTranscriptionId": null,
+  "isOnline": true,
+  "isOffline": false,
+  "medicalNoteStructure": {
+    "progressNote": [
+      {
+        "noteId": null,
+        "timestamp": "1759989971",
+        "peopleInvoled": "Sam",
+        "context": "Patient is lying down in the airplane."
+      }
+    ],
+    "patientObservations": [
+      {
+        "observationId": null,
+        "timestamp": "1759989971",
+        "bloodPressure": "120/85 mm of Hg",
+        "validty": "",
+        "otherObservations": "Heartbeat: 86 BPM, Height: 6 ft 1 inch, DOB: 6th of June 2005"
+      }
+    ],
+    "medicationAdministered": [
+      {
+        "medicationId": null,
+        "timestamp": "1759989971",
+        "medicineType": "",
+        "quantity": "",
+        "administrationType": ""
+      }
+    ]
+  }
+}

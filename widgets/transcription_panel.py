@@ -363,78 +363,146 @@ class TranscriptionPanel(BoxLayout):
             raise
     
     def generate_report_action(self):
-        """Handle generate report button press"""
-        print("📊 Generate report requested")
-        
+        """Handle generate report button press - download structured data from S3"""
         try:
-            if hasattr(self.ids, 'transcription_text'):
-                text_content = self.ids.transcription_text.text
-                if text_content and text_content != "Your transcribed text will appear here...":
-                    print(f"📋 Processing report for: {text_content[:100]}...")
-                    # Here you can add Claude processing for structured data
-                else:
-                    print("⚠️ No transcript text to process")
+            print("📊 Generate report requested - downloading structured data...")
+            
+            # Show downloading message in UI
+            Clock.schedule_once(
+                lambda dt: self.update_transcription_display("⬇️ Downloading structured data from S3...")
+            )
+            
+            # Download in background thread
+            threading.Thread(target=self.download_structured_from_s3, daemon=True).start()
+            
+        except Exception as e:
+            print(f"❌ CRASH in generate_report_action: {e}")
+            import traceback
+            traceback.print_exc()
+            
+            # Update UI with error
+            Clock.schedule_once(
+                lambda dt: self.update_transcription_display("❌ Error: Click failed. Check console.")
+            )
+
+    def download_structured_from_s3(self):
+        """Download the latest structured JSON file from S3 bucket"""
+        try:
+            print("🔗 Connecting to S3...")
+            
+            # Initialize S3 client
+            s3 = boto3.client("s3", region_name="ap-southeast-2")
+            bucket_name = "ps2511-medical-buckets"
+            
+            # List files in structured folder
+            print("📁 Checking structured/ folder...")
+            response = s3.list_objects_v2(
+                Bucket=bucket_name,
+                Prefix="structured/"
+            )
+            
+            if 'Contents' not in response or not response['Contents']:
+                print("❌ No structured files found in S3")
+                Clock.schedule_once(
+                    lambda dt: self.update_transcription_display("❌ No structured files found in S3")
+                )
+                return
+            
+            # Get the most recent structured file
+            latest_file = max(response['Contents'], key=lambda x: x['LastModified'])
+            s3_key = latest_file['Key']
+            
+            print(f"📄 Found latest file: {s3_key}")
+            print(f"📅 Modified: {latest_file['LastModified']}")
+            
+            # Create local download path in datastore/structured_data
+            structured_data_dir = os.path.join("datastore", "structured_data")
+            os.makedirs(structured_data_dir, exist_ok=True)
+            
+            local_filename = f"structured_data_{int(time.time())}.json"
+            local_path = os.path.join(structured_data_dir, local_filename)
+            
+            # Download the file
+            print(f"⬇️ Downloading {s3_key} to {local_path}...")
+            s3.download_file(bucket_name, s3_key, local_path)
+            
+            # Verify download
+            if os.path.exists(local_path):
+                file_size = os.path.getsize(local_path)
+                print(f"✅ Successfully downloaded!")
+                print(f"📊 File: {local_path}")
+                print(f"📏 Size: {file_size} bytes")
+                
+                # Update UI with success
+                Clock.schedule_once(
+                    lambda dt: self.update_transcription_display(f"✅ Downloaded: {local_filename}")
+                )
+                
+                # Clear UI after 3 seconds
+                Clock.schedule_once(lambda dt: self.clear_transcript(), 3)
+                
             else:
-                print("⚠️ No transcription_text widget found")
+                print("❌ Download failed")
+                Clock.schedule_once(
+                    lambda dt: self.update_transcription_display("❌ Download failed")
+                )
                 
         except Exception as e:
-            print(f"❌ Error in generate_report_action: {e}")
+            print(f"❌ S3 download error: {e}")
+            import traceback
+            traceback.print_exc()
+            Clock.schedule_once(
+                lambda dt: self.update_transcription_display(f"❌ S3 error: {str(e)}")
+            )
+
+    def clear_transcript(self):
+        """Clear the transcript text"""
+        try:
+            if hasattr(self.ids, 'transcription_text'):
+                self.ids.transcription_text.text = "Structured data downloaded! Record new audio for next session."
+                print("🧹 UI cleared")
+        except Exception as e:
+            print(f"❌ Error clearing UI: {e}")
     
     def update_transcription_display(self, text):
-        """Update the transcription text display"""
+        """Update the transcription text display with raw transcript"""
         try:
-            print(f"📝 Updating UI with: {text[:100]}...")
-            print(f"🔍 Widget has ids: {hasattr(self, 'ids')}")
-            print(f"🔍 Available IDs: {list(self.ids.keys()) if hasattr(self, 'ids') else 'None'}")
+            print(f"📝 Updating display with: {text[:100]}...")
             
-            # Try to update by ID
+            # Method 1: Try to find by ID first
             if hasattr(self.ids, 'transcription_text'):
-                print(f"✅ Found transcription_text widget!")
-                old_text = self.ids.transcription_text.text
                 self.ids.transcription_text.text = text
-                new_text = self.ids.transcription_text.text
-                print(f"📝 Changed from: '{old_text[:50]}...' to: '{new_text[:50]}...'")
-                print(f"✅ Updated transcription display")
+                print(f"✅ Updated via ID: transcription_text")
                 return
-            else:
-                print(f"❌ transcription_text widget not found in IDs")
             
-            # Fallback search - with more debugging
-            print(f"🔍 Starting widget tree search...")
+            # Method 2: Search for the text widget
             def find_text_widget(widget, depth=0):
-                indent = "  " * depth
-                widget_type = type(widget).__name__
-                print(f"{indent}{widget_type}")
-                
                 if hasattr(widget, 'text'):
                     current_text = str(widget.text)
-                    print(f"{indent}  Has text: '{current_text[:30]}...'")
-                    
+                    # Look for the placeholder text
                     if ('Your transcribed text will appear here' in current_text or 
                         'transcribed text will appear' in current_text or
-                        '🎤 Processing' in current_text):
-                        print(f"{indent}  ✅ FOUND TARGET WIDGET!")
+                        '🎤 Processing audio' in current_text or
+                        'Report generated!' in current_text or
+                        'unconscious with the heartbeat' in current_text):
                         return widget
                 
-                # Check children
-                if hasattr(widget, 'children'):
-                    print(f"{indent}  Children: {len(widget.children)}")
-                    for i, child in enumerate(widget.children):
-                        print(f"{indent}  Child {i}:")
-                        result = find_text_widget(child, depth + 1)
-                        if result:
-                            return result
+                # Check children recursively
+                for child in widget.children:
+                    result = find_text_widget(child, depth + 1)
+                    if result:
+                        return result
                 return None
             
             text_widget = find_text_widget(self)
+            
             if text_widget:
-                old_text = text_widget.text
                 text_widget.text = text
-                print(f"✅ Updated via search: '{old_text[:30]}...' -> '{text[:30]}...'")
+                print(f"✅ Updated transcription display successfully")
             else:
-                print("❌ Could not find any text widget to update")
+                print("❌ Could not find text widget to update")
                 
         except Exception as e:
-            print(f"❌ Error updating display: {e}")
+            print(f"❌ Error updating transcription display: {e}")
             import traceback
             traceback.print_exc()

@@ -1,0 +1,35 @@
+{
+  "userId": null,
+  "timestamp": "1759993230",
+  "rawTranscriptionId": null,
+  "isOnline": true,
+  "isOffline": false,
+  "medicalNoteStructure": {
+    "progressNote": [
+      {
+        "noteId": null,
+        "timestamp": "1759993230",
+        "peopleInvoled": "Eric Cla",
+        "context": "He was found lying on the floor in his apartment."
+      }
+    ],
+    "patientObservations": [
+      {
+        "observationId": null,
+        "timestamp": "1759993230",
+        "bloodPressure": "",
+        "validty": "",
+        "otherObservations": "Oxygen 28. Heartbeat 91 per minute."
+      }
+    ],
+    "medicationAdministered": [
+      {
+        "medicationId": null,
+        "timestamp": "1759993230",
+        "medicineType": "",
+        "quantity": "",
+        "administrationType": ""
+      }
+    ]
+  }
+}

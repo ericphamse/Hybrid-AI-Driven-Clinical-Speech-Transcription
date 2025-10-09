@@ -1,0 +1,35 @@
+{
+  "userId": null,
+  "timestamp": "1759989457",
+  "rawTranscriptionId": null,
+  "isOnline": true,
+  "isOffline": false,
+  "medicalNoteStructure": {
+    "progressNote": [
+      {
+        "noteId": null,
+        "timestamp": "1759989457",
+        "peopleInvoled": "",
+        "context": ""
+      }
+    ],
+    "patientObservations": [
+      {
+        "observationId": null,
+        "timestamp": "1759989457",
+        "bloodPressure": "",
+        "validty": "",
+        "otherObservations": ""
+      }
+    ],
+    "medicationAdministered": [
+      {
+        "medicationId": null,
+        "timestamp": "1759989457",
+        "medicineType": "",
+        "quantity": "",
+        "administrationType": ""
+      }
+    ]
+  }
+}
