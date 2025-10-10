@@ -1,0 +1,36 @@
+<MainScreen>:
+    canvas.before:
+        Color:
+            rgba: 0.96, 0.96, 0.97, 1
+        Rectangle:
+            size: self.size
+            pos: self.pos
+    BoxLayout:
+        orientation: 'vertical'
+        TopBar:
+            id: top_bar
+        BoxLayout:
+            id: main_layout
+            orientation: 'horizontal'
+            spacing: 0
+            padding: [20, 10, 20, 10]
+            TranscriptionPanel:
+                id: transcription_panel
+                size_hint_x: 0.35
+            BoxLayout:
+                size_hint_x: None
+                width: 8
+                canvas.before:
+                    Color:
+                        rgba: 0.7, 0.7, 0.7, 1
+                    Rectangle:
+                        size: self.size
+                        pos: self.pos
+                    Color:
+                        rgba: 0.5, 0.5, 0.5, 0.08
+                    Rectangle:
+                        size: (self.width, self.height)
+                        pos: (self.x, self.y)
+            StructuringPanel:
+                id: structuring_panel
+                size_hint_x: 0.65

@@ -27,7 +27,7 @@
                 radius: [8]
 
     TextInput:
-        id: transcription_input
+        id: transcription_text
         hint_text: 'Your transcribed text will appear here...'
         multiline: True
         font_size: 18
@@ -45,7 +45,7 @@
         font_size: 20
         background_color: 0.1, 0.3, 0.2, 1
         color: 1, 1, 1, 1
-        disabled: root.is_recording or transcription_input.text == ''
+        disabled: root.is_recording or transcription_text.text == ''
         on_press: root.generate_report_action()
         canvas.before:
             Color:
