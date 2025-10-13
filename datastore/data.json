@@ -1,42 +1,26 @@
 {
-    "transcriptionId": "feafc1df-7b4d-44ea-a87a-2b24b0c7d250",
-    "timestamp": "2025-10-09T20:35:35",
+    "transcriptionId": "2881cd28-5191-488f-8331-e4b1af5b74cd",
+    "timestamp": "2025-10-14T10:26:46",
     "rawTranscriptionId": "WhatsThisFor?",
     "isOnline": false,
     "isOffline": true,
     "medicalNoteStructure": {
         "progressNote": [
             {
-                "noteId": 18,
-                "timestamp": "2025-10-09T20:35:39",
-                "context": "Patient was administered with 30 mg of paracetamol.",
-                "peopleInvolved": "asd"
-            },
-            {
-                "noteId": 19,
-                "timestamp": "2025-10-09T20:38:14",
-                "context": "patient heart rate spiked up to 140, blood pressure is at 130 over 80, oxygen levels are 60%, temperature is 64 degrees celsius",
+                "noteId": 7,
+                "timestamp": "2025-10-14T10:27:01",
+                "context": "patient was administered with 54.3 mg of paracetamol",
                 "peopleInvolved": "asd"
             }
         ],
-        "patientObservation": [
-            {
-                "observationId": 17,
-                "timestamp": "2025-10-09T20:35:39",
-                "ObservationNote": ""
-            },
-            {
-                "observationId": 18,
-                "timestamp": "2025-10-09T20:38:14",
-                "ObservationNote": "BP: 130/80\nO2: 60%\nBPM: 140\n\nCelsius: 64"
-            }
-        ],
+        "patientObservation": [],
         "medicationAdministered": [
             {
-                "medicationId": 17,
-                "timestamp": "2025-10-09T20:35:39",
+                "medicationId": 7,
+                "timestamp": "2025-10-14T10:27:01",
                 "medicineType": "paracetamol",
-                "quantity": "30mg",
+                "quantity": "54.3",
+                "unit": "mg",
                 "administrationType": null
             }
         ]

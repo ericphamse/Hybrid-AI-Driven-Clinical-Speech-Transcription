@@ -314,7 +314,7 @@ class TranscriptionPanel(BoxLayout):
         else:
             wav_path = self.audio_service.stop_recording()
             # Once it's done creating that audio, return the wav path it was made at
-            if status.network_status != True:
+            if status.network_status == True:
                 def set_text(dt):
                     # Call the resampling to convert 48k Audio into 16k Audio, which is fed into vosk since it only accepts that.
                     processed_wav_path = self.audio_service.denoise_file(wav_path)
@@ -334,7 +334,7 @@ class TranscriptionPanel(BoxLayout):
             main_screen = App.get_running_app().root.get_screen('main')
             struct_panel = main_screen.ids.structuring_panel
             status = main_screen.ids.top_bar
-            if status.network_status != True:
+            if status.network_status == True:
                 def task():
                     # Run heavy function off the main thread
                     # struct_panel.prints()
@@ -349,3 +349,20 @@ class TranscriptionPanel(BoxLayout):
                     Clock.schedule_once(lambda dt: struct_panel.update_log_display())
                 threading.Thread(target=task2, daemon=True).start()
         text_input.text = ''
+        deleteAllRecordings()
+def deleteAllRecordings():
+    # Build the full path safely
+    base_dir = "datastore"
+    target_folder = os.path.join(base_dir, "raw_recordings")
+    # Loop through every item in raw folder
+    
+    for filename in os.listdir(target_folder):
+        file_path = os.path.join(target_folder, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+            
+    target_folder = os.path.join(base_dir, "processed_recordings")
+    for filename in os.listdir(target_folder):
+        file_path = os.path.join(target_folder, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)

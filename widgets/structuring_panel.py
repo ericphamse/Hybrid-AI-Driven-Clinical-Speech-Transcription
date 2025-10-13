@@ -1,6 +1,7 @@
-
-import json
+from outlines import models
 import outlines
+from typing import Optional
+import json
 import os
 from kivy.clock import Clock
 from pydantic import BaseModel, Field
@@ -10,10 +11,6 @@ from llama_cpp import Llama
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import StringProperty, ListProperty, NumericProperty
 from kivy.app import App
-from outlines import generator
-from sympy.ntheory import generate
-from llama_cpp.server.types import max_tokens_field
-# from Demos.print_desktop import pname
 
 class ReportEntry(BoxLayout):
     timestamp_str = StringProperty()
@@ -142,10 +139,11 @@ class StructuringPanel(BoxLayout):
             else:
                 wholeString += f"\nCelsius: {str(temp)}"
         
-        po = {}
-        po["transcriptionId"] = tids
-        po["timestamp"] = time_string
-        po["otherObservations"] = wholeString
+        if wholeString is not None:
+            po = {}
+            po["transcriptionId"] = tids
+            po["timestamp"] = time_string
+            po["otherObservations"] = wholeString
         
         #Combine into medicationAdministered
         wholeString = str(result["medicalNoteStructure"]["medicationAdministered"][0]["quantity"])
@@ -155,7 +153,8 @@ class StructuringPanel(BoxLayout):
         ma["transcriptionId"] = tids
         ma["timestamp"] = time_string
         ma["medicineType"] = result["medicalNoteStructure"]["medicationAdministered"][0]["medicineType"]
-        ma["quantity"] = wholeString
+        ma["quantity"] = str(result["medicalNoteStructure"]["medicationAdministered"][0]["quantity"])
+        ma["unit"] = result["medicalNoteStructure"]["medicationAdministered"][0]["unit"]
         ma["administrationType"] = result["medicalNoteStructure"]["medicationAdministered"][0]["administrationType"]
         
         self.load_clinician_name()
@@ -190,14 +189,7 @@ class StructuringPanel(BoxLayout):
         # except json.JSONDecodeError:
         #     return {"error": "invalid_json", "raw_text": structured_text}
     def generate_json(self, text, tids, globalTime):
-        from pydantic import BaseModel, Field
-        from outlines import models
-        import outlines
-        import torch
-        import json
-        from llama_cpp import llama
-        from llama_cpp import llama_tokenizer
-        from typing import List, Optional
+
         # Load HF tokenizer for the model repo
         model_path = os.path.join('model', 'Qwen2.5-1.5B-Instruct.Q8_0.gguf')
         # Pass it to Outlines
@@ -233,7 +225,7 @@ class StructuringPanel(BoxLayout):
                 None, 
                 description="Record the exact name of the medication administered. Leave empty if no medication is mentioned."
                 )
-            quantity: Optional[int] = Field(
+            quantity: Optional[float] = Field(
                 None, 
                 description="Record the quantity of the medication administered as a number. Leave empty if not mentioned."
                 )
@@ -361,14 +353,12 @@ class StructuringPanel(BoxLayout):
         po["otherObservations"] = wholeString
         
         #Combine into medicationAdministered
-        wholeString = str(dumped["medicationAdministered"]["quantity"])
-        if dumped["medicationAdministered"]["unit"] is not None:
-            wholeString += dumped["medicationAdministered"]["unit"]
         ma = {}
         ma["transcriptionId"] = tids
         ma["timestamp"] = time_string
         ma["medicineType"] = dumped["medicationAdministered"]["medicineType"]
-        ma["quantity"] = wholeString
+        ma["quantity"] = dumped["medicationAdministered"]["quantity"]
+        ma["unit"] = dumped["medicationAdministered"]["unit"]
         ma["administrationType"] = dumped["medicationAdministered"]["administrationType"]
         
         self.load_clinician_name()
@@ -438,6 +428,7 @@ class StructuringPanel(BoxLayout):
                 med_info = (
                     f"Name: {entry.get('medicineType', '')}\n"
                     f"Quantity: {entry.get('quantity', '')}\n"
+                    f"Unit: {entry.get('unit', '')}\n"
                     f"Administration: {entry.get('administrationType', '')}"
                     )
                 widget = ReportEntry(
@@ -547,7 +538,7 @@ def value_mentioned_in_text(value, text):
     # Simple substring check
     if isinstance(value, float) and value.is_integer():
         value_str = str(int(value))
-        return value_str in text_lower
+        
     return value_str in text_lower
 def bp_to_over_formatting(bp_str):
     parts = bp_str.split('/')
