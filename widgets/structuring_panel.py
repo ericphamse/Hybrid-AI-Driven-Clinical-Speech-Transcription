@@ -1,6 +1,7 @@
-
-import json
+from outlines import models
 import outlines
+from typing import Optional
+import json
 import os
 from kivy.clock import Clock
 from pydantic import BaseModel, Field
@@ -10,10 +11,9 @@ from llama_cpp import Llama
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import StringProperty, ListProperty, NumericProperty
 from kivy.app import App
-from outlines import generator
-from sympy.ntheory import generate
-from llama_cpp.server.types import max_tokens_field
-# from Demos.print_desktop import pname
+
+import sqlite3
+
 
 class ReportEntry(BoxLayout):
     timestamp_str = StringProperty()
@@ -21,7 +21,49 @@ class ReportEntry(BoxLayout):
     other_observations = StringProperty()
     medication_info = StringProperty()
 
+    def on_focus_change(self, focus, new_text):
+        conn = sqlite3.connect('clinical_transcription.db')
+        cursor = conn.cursor()
+
+        # decide which table to update
+        if not focus:
+            if self.context:
+                cursor.execute(
+                "UPDATE progress_note SET context=? WHERE timestamp=?",
+                (new_text, self.timestamp_str)
+            )
+            elif self.other_observations:
+                cursor.execute(
+                "UPDATE patient_observation SET ObservationNote=? WHERE timestamp=?",
+                (new_text, self.timestamp_str)
+            )
+            elif self.medication_info:
+                # Parse new_text
+                lines = new_text.splitlines()
+                values = {}
+                for line in lines:
+                    if ':' in line:
+                        key, val = line.split(':', 1)
+                        values[key.strip()] = val.strip()
+                for col, val in [('medicineType', 'Name'), 
+                             ('quantity', 'Quantity'), 
+                             ('unit', 'Unit'), 
+                             ('administrationType', 'Administration')]:
+                    if col in values or val in values:
+                        cursor.execute(
+                        f"UPDATE medication_administered SET {col}=? WHERE timestamp=?",
+                        (values.get(val, ''), self.timestamp_str)
+                    )
+            conn.commit()
+            conn.close()
+            
+            main_screen = App.get_running_app().root.get_screen('main')
+            struct_panel = main_screen.ids.structuring_panel
+            
+            struct_panel.load_json_data()
+
 class StructuringPanel(BoxLayout):
+
     def confirm_delete(self):
         from kivy.uix.popup import Popup
         from kivy.uix.label import Label
@@ -35,20 +77,24 @@ class StructuringPanel(BoxLayout):
                      valign='middle')
         content.add_widget(label)
         btn_layout = BoxLayout(orientation='horizontal', spacing=10, size_hint_y=None, height=40)
-        btn_yes = Button(text='Yes', background_color=(1,0.2,0.2,1))
-        btn_no = Button(text='No', background_color=(0.2,0.6,0.2,1))
+        btn_yes = Button(text='Yes', background_color=(1, 0.2, 0.2, 1))
+        btn_no = Button(text='No', background_color=(0.2, 0.6, 0.2, 1))
         btn_layout.add_widget(btn_yes)
         btn_layout.add_widget(btn_no)
         content.add_widget(btn_layout)
         popup = Popup(title='Confirm Delete', content=content, size_hint=(None, None), size=(400, 200), auto_dismiss=False)
+
         def on_yes(instance):
             popup.dismiss()
             self.clear_report()
+
         def on_no(instance):
             popup.dismiss()
+
         btn_yes.bind(on_release=on_yes)
         btn_no.bind(on_release=on_no)
         popup.open()
+
     tab_index = NumericProperty(0)  # 0: Progress Note, 1: Patient Observation, 2: Medication
     progress_notes = ListProperty([])
     patient_observations = ListProperty([])
@@ -142,12 +188,13 @@ class StructuringPanel(BoxLayout):
             else:
                 wholeString += f"\nCelsius: {str(temp)}"
         
-        po = {}
-        po["transcriptionId"] = tids
-        po["timestamp"] = time_string
-        po["otherObservations"] = wholeString
+        if wholeString is not None:
+            po = {}
+            po["transcriptionId"] = tids
+            po["timestamp"] = time_string
+            po["otherObservations"] = wholeString
         
-        #Combine into medicationAdministered
+        # Combine into medicationAdministered
         wholeString = str(result["medicalNoteStructure"]["medicationAdministered"][0]["quantity"])
         if result["medicalNoteStructure"]["medicationAdministered"][0]["unit"] is not None:
             wholeString += result["medicalNoteStructure"]["medicationAdministered"][0]["unit"]
@@ -155,17 +202,17 @@ class StructuringPanel(BoxLayout):
         ma["transcriptionId"] = tids
         ma["timestamp"] = time_string
         ma["medicineType"] = result["medicalNoteStructure"]["medicationAdministered"][0]["medicineType"]
-        ma["quantity"] = wholeString
+        ma["quantity"] = str(result["medicalNoteStructure"]["medicationAdministered"][0]["quantity"])
+        ma["unit"] = result["medicalNoteStructure"]["medicationAdministered"][0]["unit"]
         ma["administrationType"] = result["medicalNoteStructure"]["medicationAdministered"][0]["administrationType"]
         
         self.load_clinician_name()
-        #Combine generic info
+        # Combine generic info
         pn = {}
         pn["transcriptionId"] = tids
         pn["timestamp"] = time_string
         pn["context"] = transcript_text
         pn["peopleInvolved"] = self.clinician_name
-        
         
         allData = {}
         allData["transcriptionId"] = tids
@@ -181,23 +228,15 @@ class StructuringPanel(BoxLayout):
         db = LocalDatabase
         db.save_transcription_session(tids, allData)
         
-        #then you convert the entire db into the json. (God had left my soul)
+        # then you convert the entire db into the json. (God had left my soul)
         db.get_session_details(tids)
-
         
         # try:
         #     return json.loads(structured_text)
         # except json.JSONDecodeError:
         #     return {"error": "invalid_json", "raw_text": structured_text}
     def generate_json(self, text, tids, globalTime):
-        from pydantic import BaseModel, Field
-        from outlines import models
-        import outlines
-        import torch
-        import json
-        from llama_cpp import llama
-        from llama_cpp import llama_tokenizer
-        from typing import List, Optional
+
         # Load HF tokenizer for the model repo
         model_path = os.path.join('model', 'Qwen2.5-1.5B-Instruct.Q8_0.gguf')
         # Pass it to Outlines
@@ -205,40 +244,40 @@ class StructuringPanel(BoxLayout):
             model_path,
             n_ctx=8192,
             n_threads=8,
-            temperature=0.0,     # <-- crucial for factual tasks
+            temperature=0.0,  # <-- crucial for factual tasks
             top_p=0.9)
         model = models.LlamaCpp(llm)
 
         # constrained decoding:
         class PatientObservation(BaseModel):
             bloodPressure: Optional[str] = Field(
-                None, 
+                None,
                 description="Record the patient's blood pressure as a string in the format 'systolic/diastolic', e.g., '120/80'. Leave empty if not mentioned."
                 )
             oxygenLevel: Optional[str] = Field(
-                None, 
+                None,
                 description="Record the patient's oxygen saturation percentage as a number, e.g., 95. Leave empty if not mentioned."
                 )
             heartBeat: Optional[int] = Field(
-                None, 
+                None,
                 description="Record the patient's heart rate in beats per minute (bpm) as an integer, e.g., 90. Leave empty if not mentioned."
                 )
             temperature: Optional[float] = Field(
-                None, 
+                None,
                 description="Record the patient's body temperature in Celsius as a number, e.g., 37.5. Leave empty if not mentioned."
                 )
 
         class MedicationAdministered(BaseModel):
             medicineType: Optional[str] = Field(
-                None, 
+                None,
                 description="Record the exact name of the medication administered. Leave empty if no medication is mentioned."
                 )
-            quantity: Optional[int] = Field(
-                None, 
+            quantity: Optional[float] = Field(
+                None,
                 description="Record the quantity of the medication administered as a number. Leave empty if not mentioned."
                 )
             unit: Optional[str] = Field(
-                None, 
+                None,
                 description="Record the unit of the medication quantity, e.g., 'mg', 'ml', 'tablets'. Leave empty if not mentioned."
                 )
             administrationType: Optional[str] = Field(
@@ -248,11 +287,11 @@ class StructuringPanel(BoxLayout):
 
         class MedicalNoteStructure(BaseModel):
             patientObservations: PatientObservation = Field(
-                ..., 
+                ...,
                 description="Structured observation data for the patient. Fill in only what is explicitly mentioned in the text."
                 )
             medicationAdministered: MedicationAdministered = Field(
-                ..., 
+                ...,
                 description="Structured data for medications given. Fill in only what is explicitly mentioned in the text."
                 )
     
@@ -275,7 +314,7 @@ class StructuringPanel(BoxLayout):
     "{text}"
     """
         
-#Patient is going into shock. Heart rate spiking up to 90. And blood pressure is 130 over 90. Oxygen level is around 35% and temperature of 46 celsius. Administering 30 mg of pain killers to patient.
+# Patient is going into shock. Heart rate spiking up to 90. And blood pressure is 130 over 90. Oxygen level is around 35% and temperature of 46 celsius. Administering 30 mg of pain killers to patient.
     # Llama-cpp Part.
 
         generator = outlines.Generator(model, MedicalNoteStructure)
@@ -291,10 +330,9 @@ class StructuringPanel(BoxLayout):
         except json.JSONDecodeError:
             print("Model did not return valid JSON:")
             print(output)
-        #Structure the JSON to fit (kill me)
+        # Structure the JSON to fit (kill me)
         
-        #PatientObservation (whoever came up with the all in one string, count your days.)
-        
+        # PatientObservation (whoever came up with the all in one string, count your days.)
         
         obs = output.patientObservations
         med = output.medicationAdministered
@@ -329,7 +367,7 @@ class StructuringPanel(BoxLayout):
             med.administrationType = "Not mentioned"
             print("""administration type not mentioned in text, leaving "not mentioned" instead.""")
         
-            #Finally the string
+            # Finally the string
         dumped = output.model_dump()
         wholeString = ""
         bp = dumped["patientObservations"]["bloodPressure"]
@@ -354,31 +392,28 @@ class StructuringPanel(BoxLayout):
                 wholeString += f"Celsius: {str(temp)}"
             else:
                 wholeString += f"\nCelsius: {str(temp)}"
-        #Combine into patientObservation
+        # Combine into patientObservation
         po = {}
         po["transcriptionId"] = tids
         po["timestamp"] = time_string
         po["otherObservations"] = wholeString
         
-        #Combine into medicationAdministered
-        wholeString = str(dumped["medicationAdministered"]["quantity"])
-        if dumped["medicationAdministered"]["unit"] is not None:
-            wholeString += dumped["medicationAdministered"]["unit"]
+        # Combine into medicationAdministered
         ma = {}
         ma["transcriptionId"] = tids
         ma["timestamp"] = time_string
         ma["medicineType"] = dumped["medicationAdministered"]["medicineType"]
-        ma["quantity"] = wholeString
+        ma["quantity"] = dumped["medicationAdministered"]["quantity"]
+        ma["unit"] = dumped["medicationAdministered"]["unit"]
         ma["administrationType"] = dumped["medicationAdministered"]["administrationType"]
         
         self.load_clinician_name()
-        #Combine generic info
+        # Combine generic info
         pn = {}
         pn["transcriptionId"] = tids
         pn["timestamp"] = time_string
         pn["context"] = text
         pn["peopleInvolved"] = self.clinician_name
-        
         
         allData = {}
         allData["transcriptionId"] = tids
@@ -394,7 +429,7 @@ class StructuringPanel(BoxLayout):
         db = LocalDatabase
         db.save_transcription_session(tids, allData)
         
-        #then you convert the entire db into the json. (God had left my soul)
+        # then you convert the entire db into the json. (God had left my soul)
         db.get_session_details(tids)
         
     def load_json_data(self):
@@ -415,8 +450,10 @@ class StructuringPanel(BoxLayout):
     def load_clinician_name(self):
         app = App.get_running_app()
         self.clinician_name = app.session_data.get('clinician_name', '')
+
     def prints(self):
         LocalDatabase.printPath()
+
     def update_log_display(self):
         self.ids.report_log.clear_widgets()
         if self.tab_index == 0:
@@ -438,6 +475,7 @@ class StructuringPanel(BoxLayout):
                 med_info = (
                     f"Name: {entry.get('medicineType', '')}\n"
                     f"Quantity: {entry.get('quantity', '')}\n"
+                    f"Unit: {entry.get('unit', '')}\n"
                     f"Administration: {entry.get('administrationType', '')}"
                     )
                 widget = ReportEntry(
@@ -483,9 +521,6 @@ class StructuringPanel(BoxLayout):
         # except Exception as e:
         #     print(f"❌ Error stopping recording: {e}")
         #     self.cleanup_audio()
-                
-                
-
     
     def generate_report_action(self):
         """Handle generate report button press"""
@@ -504,17 +539,6 @@ class StructuringPanel(BoxLayout):
                 
         except Exception as e:
             print(f"❌ Error in generate_report_action: {e}")
-    
-
-                
-                
-                
-                
-                
-                
-                
-                
-                
                 
     def switch_tab(self, idx):
         self.tab_index = idx
@@ -526,6 +550,7 @@ class StructuringPanel(BoxLayout):
         self.medications = []
         self.load_clinician_name()
         self.update_log_display()
+
     def clear_report(self):
         self.progress_notes = []
         self.patient_observations = []
@@ -547,8 +572,10 @@ def value_mentioned_in_text(value, text):
     # Simple substring check
     if isinstance(value, float) and value.is_integer():
         value_str = str(int(value))
-        return value_str in text_lower
+        
     return value_str in text_lower
+
+
 def bp_to_over_formatting(bp_str):
     parts = bp_str.split('/')
     if len(parts) == 2:

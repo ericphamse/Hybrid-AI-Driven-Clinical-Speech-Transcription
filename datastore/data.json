@@ -1,44 +1,31 @@
 {
-    "transcriptionId": "feafc1df-7b4d-44ea-a87a-2b24b0c7d250",
-    "timestamp": "2025-10-09T20:35:35",
+    "transcriptionId": "52bee42a-c2a3-406d-975a-d1e21095c465",
+    "timestamp": "2025-10-16T09:57:07",
     "rawTranscriptionId": "WhatsThisFor?",
     "isOnline": false,
     "isOffline": true,
     "medicalNoteStructure": {
         "progressNote": [
             {
-                "noteId": 18,
-                "timestamp": "2025-10-09T20:35:39",
-                "context": "Patient was administered with 30 mg of paracetamol.",
+                "noteId": 3,
+                "timestamp": "2025-10-16T09:57:22",
+                "context": "patient was offered to be relieve of their pain but refused",
                 "peopleInvolved": "asd"
             },
             {
-                "noteId": 19,
-                "timestamp": "2025-10-09T20:38:14",
-                "context": "patient heart rate spiked up to 140, blood pressure is at 130 over 80, oxygen levels are 60%, temperature is 64 degrees celsius",
+                "noteId": 4,
+                "timestamp": "2025-10-16T09:57:52",
+                "context": "patient was tired of playing games all day before it happened",
                 "peopleInvolved": "asd"
             }
         ],
         "patientObservation": [
             {
-                "observationId": 17,
-                "timestamp": "2025-10-09T20:35:39",
+                "observationId": 2,
+                "timestamp": "2025-10-16T09:57:52",
                 "ObservationNote": ""
-            },
-            {
-                "observationId": 18,
-                "timestamp": "2025-10-09T20:38:14",
-                "ObservationNote": "BP: 130/80\nO2: 60%\nBPM: 140\n\nCelsius: 64"
             }
         ],
-        "medicationAdministered": [
-            {
-                "medicationId": 17,
-                "timestamp": "2025-10-09T20:35:39",
-                "medicineType": "paracetamol",
-                "quantity": "30mg",
-                "administrationType": null
-            }
-        ]
+        "medicationAdministered": []
     }
 }

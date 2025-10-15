@@ -349,3 +349,20 @@ class TranscriptionPanel(BoxLayout):
                     Clock.schedule_once(lambda dt: struct_panel.update_log_display())
                 threading.Thread(target=task2, daemon=True).start()
         text_input.text = ''
+        deleteAllRecordings()
+def deleteAllRecordings():
+    # Build the full path safely
+    base_dir = "datastore"
+    target_folder = os.path.join(base_dir, "raw_recordings")
+    # Loop through every item in raw folder
+    
+    for filename in os.listdir(target_folder):
+        file_path = os.path.join(target_folder, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+            
+    target_folder = os.path.join(base_dir, "processed_recordings")
+    for filename in os.listdir(target_folder):
+        file_path = os.path.join(target_folder, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)

@@ -5,17 +5,17 @@ import os
 #import boto3
 
 #Import datatime for its timestamping feature.
-from datetime import datetime
+# from datetime import datetime
 
 #Craete dataclass for structured data handling.
-from dataclasses import dataclass, asdict
+# from dataclasses import dataclass, asdict
 #Unique user id generation.
-import uuid
+# import uuid
 
 #Logging an debug and info for dev purpose.
-import logging
+# import logging
 #Typing imports for dev purpose.
-from typing import Dict, List, Optional, Any
+from typing import Dict, Optional, Any
 
 class LocalDatabase:
     """SQLite database for local storage"""
@@ -82,6 +82,7 @@ class LocalDatabase:
                     timestamp TEXT NOT NULL,
                     medicineType TEXT ,
                     quantity TEXT ,
+                    unit TEXT ,
                     administrationType TEXT ,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (transcriptionId) REFERENCES transcription_session (transcriptionId)
@@ -134,7 +135,8 @@ class LocalDatabase:
                       json.dumps(session_data["medicalNoteStructure"]["progressNote"]["peopleInvolved"])))
                     
                     #Save patient observation
-                cursor.execute('''
+                if session_data["medicalNoteStructure"]["patientObservation"]["otherObservations"]:
+                    cursor.execute('''
                     INSERT INTO patient_observation 
                     (transcriptionId, timestamp, ObservationNote)
                     VALUES (?, ?, ?)
@@ -143,14 +145,16 @@ class LocalDatabase:
                       session_data["medicalNoteStructure"]["patientObservation"]["otherObservations"]))
                         
                    #Save medication data
-                cursor.execute('''
+                if session_data["medicalNoteStructure"]["medicationAdministered"]["medicineType"]:
+                    cursor.execute('''
                     INSERT INTO medication_administered 
-                    (transcriptionId, timestamp, medicineType, quantity, administrationType)
-                    VALUES (?, ?, ?, ?, ?)
+                    (transcriptionId, timestamp, medicineType, quantity, unit, administrationType)
+                    VALUES (?, ?, ?, ?, ?, ?)
                 ''', (tids, 
                       session_data["medicalNoteStructure"]["medicationAdministered"]["timestamp"],
                       session_data["medicalNoteStructure"]["medicationAdministered"]["medicineType"], 
                       session_data["medicalNoteStructure"]["medicationAdministered"]["quantity"], 
+                      session_data["medicalNoteStructure"]["medicationAdministered"]["unit"],
                       session_data["medicalNoteStructure"]["medicationAdministered"]["administrationType"]))
                        
 
@@ -162,6 +166,7 @@ class LocalDatabase:
             #Save progress note.
             conn = sqlite3.connect("clinical_transcription.db")
             cursor = conn.cursor()
+            
             cursor.execute('''
                 INSERT INTO progress_note 
                 (transcriptionId, timestamp, context, peopleInvolved)
@@ -185,12 +190,13 @@ class LocalDatabase:
             if session_data["medicalNoteStructure"]["medicationAdministered"]["medicineType"]:
                 cursor.execute('''
                 INSERT INTO medication_administered 
-                (transcriptionId, timestamp, medicineType, quantity, administrationType)
-                VALUES (?, ?, ?, ?, ?)
+                (transcriptionId, timestamp, medicineType, quantity, unit, administrationType)
+                VALUES (?, ?, ?, ?, ?, ?)
             ''', (tids, 
                     session_data["medicalNoteStructure"]["medicationAdministered"]["timestamp"],
                     session_data["medicalNoteStructure"]["medicationAdministered"]["medicineType"], 
                     session_data["medicalNoteStructure"]["medicationAdministered"]["quantity"], 
+                    session_data["medicalNoteStructure"]["medicationAdministered"]["unit"],
                     session_data["medicalNoteStructure"]["medicationAdministered"]["administrationType"]))
         conn.commit()
         conn.close()
@@ -249,7 +255,7 @@ class LocalDatabase:
             
             #Get medication data.
             cursor.execute('''
-                SELECT medicationId, timestamp, medicineType, quantity, administrationType
+                SELECT medicationId, timestamp, medicineType, quantity, unit, administrationType
                 FROM medication_administered
                 WHERE transcriptionId = ?
             ''', (transcription_id,))
@@ -259,7 +265,8 @@ class LocalDatabase:
                     "timestamp": row[1],
                     "medicineType": row[2],
                     "quantity": row[3],
-                    "administrationType": row[4]
+                    "unit": row[4],
+                    "administrationType": row[5]
                 }
                 for row in cursor.fetchall()
             ]

@@ -29,6 +29,7 @@
         TextInput:
             id: entry_textinput
             text: root.context if root.context else (root.other_observations if root.other_observations else root.medication_info)
+            on_focus: root.on_focus_change(self.focus, self.text)
             font_size: 16
             foreground_color: 0.1, 0.1, 0.1, 1
             background_color: 0.98, 0.98, 0.98, 1

@@ -1,10 +1,10 @@
 
 import pyaudio
 import wave
-import time
-import requests
-import boto3
-from kivy.clock import Clock
+# import time
+# import requests
+# import boto3
+# from kivy.clock import Clock
 import numpy as np
 from scipy.signal import resample_poly
 import threading
