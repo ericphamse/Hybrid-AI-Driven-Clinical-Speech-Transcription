@@ -56,10 +56,12 @@ class ReportEntry(BoxLayout):
                     )
             conn.commit()
             conn.close()
+            db = LocalDatabase
             
             main_screen = App.get_running_app().root.get_screen('main')
             struct_panel = main_screen.ids.structuring_panel
-            
+            transcription_panel = main_screen.ids.transcription_panel
+            db.get_session_details(transcription_panel.transcription_id)
             struct_panel.load_json_data()
 
 class StructuringPanel(BoxLayout):

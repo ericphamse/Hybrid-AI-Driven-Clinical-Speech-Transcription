@@ -1,31 +1,25 @@
 {
-    "transcriptionId": "52bee42a-c2a3-406d-975a-d1e21095c465",
-    "timestamp": "2025-10-16T09:57:07",
+    "transcriptionId": "292f3e98-3e4e-4011-bec9-3fe9976b3860",
+    "timestamp": "2025-10-16T10:19:29",
     "rawTranscriptionId": "WhatsThisFor?",
     "isOnline": false,
     "isOffline": true,
     "medicalNoteStructure": {
         "progressNote": [
             {
-                "noteId": 3,
-                "timestamp": "2025-10-16T09:57:22",
-                "context": "patient was offered to be relieve of their pain but refused",
+                "noteId": 5,
+                "timestamp": "2025-10-16T10:19:44",
+                "context": "patient was asking about a brain migrane",
                 "peopleInvolved": "asd"
             },
             {
-                "noteId": 4,
-                "timestamp": "2025-10-16T09:57:52",
-                "context": "patient was tired of playing games all day before it happened",
+                "noteId": 6,
+                "timestamp": "2025-10-16T10:20:15",
+                "context": "patient was needlessly whining about pain relieves",
                 "peopleInvolved": "asd"
             }
         ],
-        "patientObservation": [
-            {
-                "observationId": 2,
-                "timestamp": "2025-10-16T09:57:52",
-                "ObservationNote": ""
-            }
-        ],
+        "patientObservation": [],
         "medicationAdministered": []
     }
 }
