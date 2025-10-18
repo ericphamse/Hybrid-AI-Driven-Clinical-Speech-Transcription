@@ -1,0 +1,31 @@
+# Ignore environment variables
+
+# !!!IMPORTANT - DO NOT REMOVE THIS LINE IF YOU HAVE A .env FILE. FOR SECURITY REASONS, THIS FILE SHOULD NOT BE TRACKED BY GIT.!!!
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Audio recordings (temporary)
+raw_recordings/
+processed_recordings/
+temp/
+
+# Virtual environments
+kivy_venv/
+venv/
+.venv/
+
+# IDE
+.vscode/
+
+# Database files (if you want to keep them out of git)
+*.db
+clinical_transcription.db
+
+# Generated files (Optional)
+#datastore/
+#session.json
+#data.json

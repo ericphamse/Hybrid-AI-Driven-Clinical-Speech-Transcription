@@ -314,6 +314,7 @@ class TranscriptionPanel(BoxLayout):
         else:
             wav_path = self.audio_service.stop_recording()
             # Once it's done creating that audio, return the wav path it was made at
+            # ------Testing tip: Set the '==' or '!=' MUST also set the same for ...network_status below-------
             if status.network_status != True:
                 def set_text(dt):
                     # Call the resampling to convert 48k Audio into 16k Audio, which is fed into vosk since it only accepts that.
@@ -334,6 +335,7 @@ class TranscriptionPanel(BoxLayout):
             main_screen = App.get_running_app().root.get_screen('main')
             struct_panel = main_screen.ids.structuring_panel
             status = main_screen.ids.top_bar
+            # ------Testing tip: Set the '==' or '!=' MUST also set the same for ...network_status above-------
             if status.network_status != True:
                 def task():
                     # Run heavy function off the main thread
@@ -341,17 +343,37 @@ class TranscriptionPanel(BoxLayout):
                     result = struct_panel.generate_json(text, self.transcription_id, time_string)        
                     Clock.schedule_once(lambda dt: struct_panel.load_json_data())
                     Clock.schedule_once(lambda dt: struct_panel.update_log_display())
+                    Clock.schedule_once(lambda dt: self.trigger_aws_sync(), 1.0)  # Sync after 1 second
                 threading.Thread(target=task, daemon=True).start()
             else:
                 def task2():
                     result = struct_panel.format_with_claude(self.bedrock, self.CLAUDE_37_SONNET_ARN,text, self.transcription_id, time_string)
                     Clock.schedule_once(lambda dt: struct_panel.load_json_data())
                     Clock.schedule_once(lambda dt: struct_panel.update_log_display())
+                    Clock.schedule_once(lambda dt: self.trigger_aws_sync(), 1.0)  # Sync after 1 second
                 threading.Thread(target=task2, daemon=True).start()
         text_input.text = ''
         deleteAllRecordings()
+
+    def trigger_aws_sync(self):
+            """Attempt to sync pending records to AWS"""
+            try:
+                from aws_sync_manager import AWSSyncManager
+                sync_manager = AWSSyncManager()
+                
+                if sync_manager.check_aws_connectivity():
+                    synced = sync_manager.sync_pending_records()
+                    if synced > 0:
+                        print(f"✅ Synced {synced} records to AWS")
+                else:
+                    print("⚠️ AWS not available, records remain local")
+            except Exception as e:
+                print(f"⚠️ Sync attempt failed: {e}")
+
 def deleteAllRecordings():
     # Build the full path safely
+    # Add a slight delay to ensure all file operations are complete
+    time.sleep(3)
     base_dir = "datastore"
     target_folder = os.path.join(base_dir, "raw_recordings")
     # Loop through every item in raw folder
