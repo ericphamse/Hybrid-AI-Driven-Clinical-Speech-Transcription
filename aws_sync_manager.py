@@ -1,4 +1,5 @@
 #aws_sync_manager.py
+#This is an AWS sync manager for clinical transcription records.
 import sqlite3
 import json
 import os
@@ -7,6 +8,17 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
+
+
+def get_username_logged_in():
+    """Placeholder function to get the clinician name"""
+    #In a real application, this would take from the input of the name from the login screen
+    try:
+        from kivy.app import App
+        app = App.get_running_app()
+        return app.session_data.get('clinician_name', 'unnamed_clinician')
+    except:
+        return "unnamed_clinician"
 
 class AWSSyncManager:
     """Handle local-to-cloud sync for transcription records"""
@@ -54,7 +66,7 @@ class AWSSyncManager:
         try:
             #Extract key data from your session structure
             item = {
-            'userId': 'default_clinician',
+            'userId': self.get_username_logged_in(),
             'sessionId': transcription_id,
             'timestamp': session_data.get('timestamp'),
             'progressNote': session_data.get('progressNote', ''),
@@ -72,7 +84,7 @@ class AWSSyncManager:
             return False
     #---Sync the pending records---    
     def sync_pending_records(self):
-        """Push all pending records from SQLite to DynamoDB"""
+        """Push all pending records from localDB to online DB DynamoDB"""
         if not self.table:
             print("❌ DynamoDB not connected")
             return 0
@@ -83,13 +95,12 @@ class AWSSyncManager:
             
             #Get all transcription sessions that haven't been synced
 
-            #Broken function....
-            #cursor.execute('''
-                #SELECT transcriptionId FROM transcription_session 
-                #WHERE isOnline = 1 AND rowid NOT IN (
-                #    SELECT rowid FROM transcription_session WHERE isOnline = 0
-                #)
-            #''')
+            cursor.execute('''
+                SELECT transcriptionId FROM transcription_session 
+                WHERE isOnline = 1 AND rowid NOT IN (
+                    SELECT rowid FROM transcription_session WHERE isOnline = 0
+                )
+            ''')
 
             #TEMPOARY FIX TO FORCE SYNC TRANSCRIPTION MARKED AS OFFLINE
             cursor.execute('''
@@ -106,7 +117,7 @@ class AWSSyncManager:
                 
                 if session_data:
                     item = {
-                        'userId': 'default_clinician',
+                        'userId': session_data.get('clinician_name', get_username_logged_in()),
                         'sessionId': transcription_id,
                         'timestamp': session_data.get('timestamp'),
                         'progressNote': session_data.get('progressNote', ''),
@@ -182,6 +193,7 @@ class AWSSyncManager:
             
             return {
                 'transcriptionId': transcription_id,
+                'userId': get_username_logged_in(),
                 'timestamp': session_row[0],
                 'rawTranscription': session_row[1],
                 'isOnline': bool(session_row[2]),

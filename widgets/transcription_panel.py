@@ -314,7 +314,7 @@ class TranscriptionPanel(BoxLayout):
         else:
             wav_path = self.audio_service.stop_recording()
             # Once it's done creating that audio, return the wav path it was made at
-            # ------Testing tip: Set the '==' or '!=' MUST also set the same for ...network_status below-------
+            # ------Testing tip: Set the '==' or '!=' to forcefully test online or offline function MUST also set the same for ...network_status below-------
             if status.network_status != True:
                 def set_text(dt):
                     # Call the resampling to convert 48k Audio into 16k Audio, which is fed into vosk since it only accepts that.
@@ -366,7 +366,7 @@ class TranscriptionPanel(BoxLayout):
                     if synced > 0:
                         print(f"✅ Synced {synced} records to AWS")
                 else:
-                    print("⚠️ AWS not available, records remain local")
+                    print("⚠️ AWS not available, records remain as-is locally")
             except Exception as e:
                 print(f"⚠️ Sync attempt failed: {e}")
 
