@@ -73,6 +73,10 @@ class ReportEntry(BoxLayout):
 
 class StructuringPanel(BoxLayout):
 
+    def on_save_session_pressed(self):
+        app = App.get_running_app()
+        app.root.current = 'pdf_preview'
+
     def confirm_delete(self):
         from kivy.uix.popup import Popup
         from kivy.uix.label import Label
