@@ -104,16 +104,13 @@
     BoxLayout:
         size_hint_y: None
         height: 50
-        spacing: 10
+        padding: [0, 0, 0, 0]
+        spacing: 0
         Button:
-            text: 'Delete Session'
-            background_color: 1, 0.2, 0.2, 1
-            color: 1, 1, 1, 1
-            on_press: root.confirm_delete()
-            disabled: not (root.progress_notes or root.patient_observations or root.medications)
-        Button:
-            text: 'Save Session'
+            text: 'Save and Print PDF'
+            font_size: 18
             background_color: 0.2, 0.6, 0.2, 1
             color: 1, 1, 1, 1
+            size_hint_x: 1
             disabled: not (root.progress_notes or root.patient_observations or root.medications)
             on_press: root.on_save_session_pressed()
