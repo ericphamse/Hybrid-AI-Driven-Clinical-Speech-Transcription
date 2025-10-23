@@ -7,7 +7,7 @@ if you're on windows: "pip install -r requirements.txt", I don't know what's for
 After that, you can download the entire file as a zip file. And extract it then run in any IDE coding environment if deployment on MacOS is not viable. One thing to note is that you have to manually download the models which I'll put here.
 Vosk: 
 https://alphacephei.com/vosk/models -> vosk-model-small-en-us-0.15
-TinyLlama: 
-https://huggingface.co/MaziyarPanahi/Qwen2.5-1.5B-Instruct-GGUF -> 
-(for TinyLlama, the difference in models are not too big, and I haven't tested out the 2nd most file heavy one yet to see if it's worth adding to the testing phase)
-download them, put them inside of the script's folder, then remember to change the name of the file path. since I made a folder named "model" inside and put TtinyLlama .gguf file there and renamed it to "model/medium.gguf" and for vosk, just aside the script and didn't bother to rename it to anything else.
+Qwen-1.5B-Instruct: 
+https://huggingface.co/MaziyarPanahi/Qwen2.5-1.5B-Instruct-GGUF -> <ins>Qwen2.5-1.5B-Instruct.Q8_0.gguf</ins>
+
+To get started, when you load the project inside of the workplace's folders, make a folder named "model" <- this is where most of your downloaded models will be stored. To run the code itself, <ins>it must be ran on main.py </ins>, attempting to run other .py files will result in the app not launching or being thrown an error.
