@@ -11,3 +11,5 @@ Qwen-1.5B-Instruct:
 https://huggingface.co/MaziyarPanahi/Qwen2.5-1.5B-Instruct-GGUF -> <ins>Qwen2.5-1.5B-Instruct.Q8_0.gguf</ins>
 
 To get started, when you load the project inside of the workplace's folders, make a folder named "model" <- this is where most of your downloaded models will be stored. To run the code itself, <ins>it must be ran on main.py </ins>, attempting to run other .py files will result in the app not launching or being thrown an error.
+
+### Lastly, there are some libraries such as llama cpp, which is supposedly for c environment only, but there is a wrapper library called llama-cpp-python, but it requires one to install vs build tool from microsoft, another requirement is to install rust toolchain as well, for pydantic library. So in short. Download Vs buildtool, rust toolchain, then you're able to download all of the pip installs without any problem.
