@@ -4,3 +4,7 @@ numpy
 noisereduce
 vosk
 ctransformers
+boto3
+scipy
+pyrnnoise
+watchdog

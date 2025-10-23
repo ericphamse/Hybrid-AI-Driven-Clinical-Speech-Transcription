@@ -64,7 +64,12 @@ class ReportEntry(BoxLayout):
             db.get_session_details(transcription_panel.transcription_id)
             struct_panel.load_json_data()
 
+
 class StructuringPanel(BoxLayout):
+
+    def on_save_session_pressed(self):
+        app = App.get_running_app()
+        app.root.current = 'pdf_preview'
 
     def confirm_delete(self):
         from kivy.uix.popup import Popup
