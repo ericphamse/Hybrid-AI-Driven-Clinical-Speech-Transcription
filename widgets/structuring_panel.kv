@@ -115,4 +115,5 @@
             text: 'Save Session'
             background_color: 0.2, 0.6, 0.2, 1
             color: 1, 1, 1, 1
+            on_press: root.confirm_delete()
             disabled: not (root.progress_notes or root.patient_observations or root.medications)

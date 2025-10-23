@@ -10,6 +10,7 @@ import time
 import boto3
 from datetime import datetime
 from audioservice import AudioService
+from text_to_num import alpha2digit
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import BooleanProperty
 from kivy.app import App
@@ -307,19 +308,20 @@ class TranscriptionPanel(BoxLayout):
         self.is_recording = not self.is_recording
         main_screen = App.get_running_app().root.get_screen('main')
         status = main_screen.ids.top_bar
-        
+        struct_panel = main_screen.ids.structuring_panel
         if self.is_recording:
             self.ids.transcription_text.text = '' #Makes it so that it removes the previous transcribed text
             self.audio_service.start_recording() # Runs a function that starts recording
         else:
             wav_path = self.audio_service.stop_recording()
             # Once it's done creating that audio, return the wav path it was made at
-            if status.network_status != True:
+            if status.network_status == True:
                 def set_text(dt):
                     # Call the resampling to convert 48k Audio into 16k Audio, which is fed into vosk since it only accepts that.
                     processed_wav_path = self.audio_service.denoise_file(wav_path)
                     transcription = self.audio_service.transcribe_audio(self.model,self.audio_service.resample_to_16k(processed_wav_path))
-                    self.ids.transcription_text.text = transcription
+                    print(transcription)
+                    self.ids.transcription_text.text = alpha2digit(transcription, "en")
                 Clock.schedule_once(set_text, 0)
             else:
                 threading.Thread(target=self.send_to_aws_pipeline, args=(wav_path,), daemon=True).start()
@@ -334,7 +336,7 @@ class TranscriptionPanel(BoxLayout):
             main_screen = App.get_running_app().root.get_screen('main')
             struct_panel = main_screen.ids.structuring_panel
             status = main_screen.ids.top_bar
-            if status.network_status != True:
+            if status.network_status == True:
                 def task():
                     # Run heavy function off the main thread
                     # struct_panel.prints()
@@ -352,6 +354,8 @@ class TranscriptionPanel(BoxLayout):
         deleteAllRecordings()
 def deleteAllRecordings():
     # Build the full path safely
+    print("Waiting 3 seconds before deleting recordings...")
+    time.sleep(3)
     base_dir = "datastore"
     target_folder = os.path.join(base_dir, "raw_recordings")
     # Loop through every item in raw folder

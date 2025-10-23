@@ -1,25 +1,46 @@
 {
-    "transcriptionId": "292f3e98-3e4e-4011-bec9-3fe9976b3860",
-    "timestamp": "2025-10-16T10:19:29",
+    "transcriptionId": "a59ff894-f38d-4815-87b1-aa57b4ff3cbb",
+    "timestamp": "2025-10-23T22:16:17",
     "rawTranscriptionId": "WhatsThisFor?",
     "isOnline": false,
     "isOffline": true,
     "medicalNoteStructure": {
         "progressNote": [
             {
-                "noteId": 5,
-                "timestamp": "2025-10-16T10:19:44",
-                "context": "patient was asking about a brain migrane",
+                "noteId": 1,
+                "timestamp": "2025-10-23T22:16:33",
+                "context": "patient was profusely bleeding at the scene",
                 "peopleInvolved": "asd"
             },
             {
-                "noteId": 6,
-                "timestamp": "2025-10-16T10:20:15",
-                "context": "patient was needlessly whining about pain relieves",
+                "noteId": 2,
+                "timestamp": "2025-10-23T22:17:08",
+                "context": "45 ml of ethanol were used to disinfect patients flesh torn wounds",
+                "peopleInvolved": "asd"
+            },
+            {
+                "noteId": 3,
+                "timestamp": "2025-10-23T22:17:51",
+                "context": "patients recorded blood pressure is 120 over 90 and heart rate is spiking up to 90, oxygen level is around 75 percent",
                 "peopleInvolved": "asd"
             }
         ],
-        "patientObservation": [],
-        "medicationAdministered": []
+        "patientObservation": [
+            {
+                "observationId": 1,
+                "timestamp": "2025-10-23T22:17:51",
+                "ObservationNote": "BP: 120/90\nBPM: 90\n"
+            }
+        ],
+        "medicationAdministered": [
+            {
+                "medicationId": 1,
+                "timestamp": "2025-10-23T22:17:08",
+                "medicineType": "ethanol",
+                "quantity": "45.0",
+                "unit": "ml",
+                "administrationType": "Not mentioned"
+            }
+        ]
     }
 }

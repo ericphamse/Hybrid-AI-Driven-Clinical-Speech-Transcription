@@ -262,6 +262,16 @@ class MedicalApp(App):
 
     def on_start(self):
         self.load_session_from_json()
-
+    def on_stop(self):
+        db_path = os.path.join(os.getcwd(), "clinical_transcription.db")
+        
+        if os.path.exists(db_path):
+            try:
+                os.remove(db_path)
+                print("Deleted.")
+            except Exception as e:
+                print("Couldn't Delete.")
+        else:
+            print("No database Found.")
 if __name__ == '__main__':
     MedicalApp().run()
