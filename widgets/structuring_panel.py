@@ -6,6 +6,12 @@ import os
 from kivy.clock import Clock
 from pydantic import BaseModel, Field
 from widgets.database import LocalDatabase
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+import platform
+import subprocess
 from datetime import datetime
 from llama_cpp import Llama
 from kivy.uix.boxlayout import BoxLayout
@@ -45,9 +51,9 @@ class ReportEntry(BoxLayout):
                     if ':' in line:
                         key, val = line.split(':', 1)
                         values[key.strip()] = val.strip()
-                for col, val in [('medicineType', 'Name'), 
-                             ('quantity', 'Quantity'), 
-                             ('unit', 'Unit'), 
+                for col, val in [('medicineType', 'Name'),
+                             ('quantity', 'Quantity'),
+                             ('unit', 'Unit'),
                              ('administrationType', 'Administration')]:
                     if col in values or val in values:
                         cursor.execute(
@@ -562,6 +568,7 @@ class StructuringPanel(BoxLayout):
         self.progress_notes = []
         self.patient_observations = []
         self.medications = []
+        create_pdf()
         self.update_log_display()
 
     def on_parent(self, widget, parent):
@@ -590,3 +597,115 @@ def bp_to_over_formatting(bp_str):
         second = parts[1].strip()
         return f"{first} over {second}"
     return None
+
+
+def fetch_all_data():
+    conn = sqlite3.connect("clinical_transcription.db")
+    cursor = conn.cursor()
+    # Fetch each table
+    cursor.execute("SELECT noteId, timestamp, context, peopleInvolved FROM progress_note")
+    progress_data = cursor.fetchall()
+    progress_cols = [desc[0] for desc in cursor.description]
+    cursor.execute("SELECT observationId, timestamp, ObservationNote FROM patient_observation")
+    observation_data = cursor.fetchall()
+    observation_cols = [desc[0] for desc in cursor.description]
+    cursor.execute("SELECT medicationId, timestamp, medicineType, quantity, unit, administrationType FROM medication_administered")
+    medication_data = cursor.fetchall()
+    medication_cols = [desc[0] for desc in cursor.description]
+
+    conn.close()
+
+    return {
+            "progress_note": (progress_cols, progress_data),
+            "patient_observation": (observation_cols, observation_data),
+            "medication_administered": (medication_cols, medication_data)
+        }
+
+
+def create_pdf():
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+    name="Title",
+    parent=styles["Heading1"],
+    alignment=1,  # center
+    textColor=colors.HexColor("#2E4053"),
+    spaceAfter=20,
+    )
+
+    subtitle_style = ParagraphStyle(
+    name="Subtitle",
+    parent=styles["Heading2"],
+    textColor=colors.HexColor("#1A5276"),
+    spaceAfter=10,
+    )
+
+    PAGE_WIDTH, PAGE_HEIGHT = A4
+    LEFT_MARGIN = RIGHT_MARGIN = 30
+    available_width = PAGE_WIDTH - LEFT_MARGIN - RIGHT_MARGIN
+
+    doc = SimpleDocTemplate("test.pdf", pagesize=A4,
+                        leftMargin=LEFT_MARGIN, rightMargin=RIGHT_MARGIN,
+                        topMargin=30, bottomMargin=30)
+    elements = []
+
+    # Title
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    elements.append(Paragraph("<b>Transcription Database Report</b>", title_style))
+    elements.append(Paragraph(f"Generated on {now}", styles["Normal"]))
+    elements.append(Spacer(1, 20))
+
+    data_dict = fetch_all_data()
+    for table_name, (columns, rows) in data_dict.items():
+        # Section Header
+        elements.append(Paragraph(f"<b>{table_name.replace('_', ' ').title()}</b>", subtitle_style))
+
+        if not rows:
+            elements.append(Paragraph("<i>No data available.</i>", styles["Normal"]))
+            elements.append(Spacer(1, 15))
+            continue
+
+        # Wrap all cell content as Paragraph to auto-wrap text
+        table_data = [columns] + rows
+        table_data_wrapped = []
+        for row in table_data:
+            table_data_wrapped.append([Paragraph(str(cell), styles['Normal']) for cell in row])
+
+        # Calculate column widths (divide equally across available width)
+        num_columns = len(columns)
+        col_width = available_width / num_columns
+        col_widths = [col_width] * num_columns
+
+        # Create and style the table
+        table = Table(table_data_wrapped, colWidths=col_widths, repeatRows=1)
+        table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#2874A6")),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 11),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+        ('GRID', (0, 0), (-1, -1), 0.25, colors.grey),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+    ]))
+        elements.append(table)
+        elements.append(Spacer(1, 25))
+
+    # Save PDF
+    doc.build(elements)
+    print("PDF 'test.pdf' created.")
+
+    # Auto-open
+    open_pdf("test.pdf")
+
+
+def open_pdf(path):
+    system = platform.system()
+    try:
+        if system == "Windows":
+            os.startfile(path)
+        elif system == "Darwin":  # macOS
+            subprocess.Popen(["open", path])
+        else:  # Linux
+            subprocess.Popen(["xdg-open", path])
+    except Exception as e:
+        print(f"Could not open PDF: {e}")
