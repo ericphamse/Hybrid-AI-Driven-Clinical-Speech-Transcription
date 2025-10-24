@@ -1,6 +1,6 @@
 {
-    "transcriptionId": "a59ff894-f38d-4815-87b1-aa57b4ff3cbb",
-    "timestamp": "2025-10-23T22:16:17",
+    "transcriptionId": "7cbcba08-9c9e-462c-a1c3-084a06189c4e",
+    "timestamp": "2025-10-24T16:54:54",
     "rawTranscriptionId": "WhatsThisFor?",
     "isOnline": false,
     "isOffline": true,
@@ -8,39 +8,12 @@
         "progressNote": [
             {
                 "noteId": 1,
-                "timestamp": "2025-10-23T22:16:33",
-                "context": "patient was profusely bleeding at the scene",
-                "peopleInvolved": "asd"
-            },
-            {
-                "noteId": 2,
-                "timestamp": "2025-10-23T22:17:08",
-                "context": "45 ml of ethanol were used to disinfect patients flesh torn wounds",
-                "peopleInvolved": "asd"
-            },
-            {
-                "noteId": 3,
-                "timestamp": "2025-10-23T22:17:51",
-                "context": "patients recorded blood pressure is 120 over 90 and heart rate is spiking up to 90, oxygen level is around 75 percent",
+                "timestamp": "2025-10-24T16:55:09",
+                "context": "this project is so shit do",
                 "peopleInvolved": "asd"
             }
         ],
-        "patientObservation": [
-            {
-                "observationId": 1,
-                "timestamp": "2025-10-23T22:17:51",
-                "ObservationNote": "BP: 120/90\nBPM: 90\n"
-            }
-        ],
-        "medicationAdministered": [
-            {
-                "medicationId": 1,
-                "timestamp": "2025-10-23T22:17:08",
-                "medicineType": "ethanol",
-                "quantity": "45.0",
-                "unit": "ml",
-                "administrationType": "Not mentioned"
-            }
-        ]
+        "patientObservation": [],
+        "medicationAdministered": []
     }
 }

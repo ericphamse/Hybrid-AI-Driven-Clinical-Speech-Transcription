@@ -696,7 +696,7 @@ def create_pdf():
     print("PDF 'test.pdf' created.")
 
     # Auto-open
-    open_pdf("test.pdf")
+    # open_pdf("test.pdf")
 
 
 def open_pdf(path):
