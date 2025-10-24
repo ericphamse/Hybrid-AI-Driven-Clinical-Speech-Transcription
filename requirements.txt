@@ -19,3 +19,4 @@ text2num
 sqlite3
 outlines
 pydantic
+llama-cpp-python
