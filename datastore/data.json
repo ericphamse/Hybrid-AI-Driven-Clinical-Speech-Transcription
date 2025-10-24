@@ -1,25 +1,25 @@
 {
-    "transcriptionId": "292f3e98-3e4e-4011-bec9-3fe9976b3860",
-    "timestamp": "2025-10-16T10:19:29",
+    "transcriptionId": "2e4f02ab-02f1-4841-813e-dcda005b0d8c",
+    "timestamp": "2025-10-24T21:20:49",
     "rawTranscriptionId": "WhatsThisFor?",
-    "isOnline": false,
-    "isOffline": true,
+    "isOnline": true,
+    "isOffline": false,
     "medicalNoteStructure": {
         "progressNote": [
             {
-                "noteId": 5,
-                "timestamp": "2025-10-16T10:19:44",
-                "context": "patient was asking about a brain migrane",
-                "peopleInvolved": "asd"
-            },
-            {
-                "noteId": 6,
-                "timestamp": "2025-10-16T10:20:15",
-                "context": "patient was needlessly whining about pain relieves",
-                "peopleInvolved": "asd"
+                "noteId": 14,
+                "timestamp": "2025-10-24T21:20:53",
+                "context": "Patient from Broken Hill, name Olivia James, seventy-one years old. Patient is drowsy but responsive. Blood pressure one hundred over sixty-five, heart rate eighty-six, oxygen level ninety-five percent on room air. Monitoring continues during transport.",
+                "peopleInvolved": "Lan"
             }
         ],
-        "patientObservation": [],
+        "patientObservation": [
+            {
+                "observationId": 11,
+                "timestamp": "2025-10-24T21:20:53",
+                "ObservationNote": "BP: 100/65\nO2: 95%\nBPM: 86\n"
+            }
+        ],
         "medicationAdministered": []
     }
 }
