@@ -1,5 +1,5 @@
 #aws_sync_manager.py
-#This is an AWS sync manager for clinical transcription records.
+# This is an AWS sync manager for clinical transcription records.
 import sqlite3
 import json
 import os
@@ -12,7 +12,7 @@ load_dotenv()
 
 def get_username_logged_in():
     """Placeholder function to get the clinician name"""
-    #In a real application, this would take from the input of the name from the login screen
+    # In a real application, this would take from the input of the name from the login screen
     try:
         from kivy.app import App
         app = App.get_running_app()
@@ -27,7 +27,7 @@ class AWSSyncManager:
         self.local_db = "clinical_transcription.db"
         self.dynamodb_table = "TranscriptionRecords"
         
-        #AWS credentials from .env with relervant access key and secret 
+        # AWS credentials from .env with relervant access key and secret 
         # ----------------WARNING: DO NOT STORE .env WITHIN GITHUB!!!!----------------
         self.aws_key = os.getenv('AWS_ACCESS_KEY_ID')
         self.aws_secret = os.getenv('AWS_SECRET_ACCESS_KEY')
@@ -63,24 +63,29 @@ class AWSSyncManager:
             print("❌ DynamoDB not connected")
             return False
         
+        # Extract key data from your session structure
         try:
-            #Extract key data from your session structure
+            
+
+            #Determine session mode if it was completed online or offline
+            session_mode = 'online' if session_data.get('isOnline', False) else 'offline'
+
             item = {
-            'userId': self.get_username_logged_in(),
-            'sessionId': transcription_id,
-            'timestamp': session_data.get('timestamp'),
-            'progressNote': session_data.get('progressNote', ''),
-            'patientObservation': session_data.get('patientObservation', ''),
-            'medicationAdministered': session_data.get('medicationAdministered', []),
-            'mode': 'online' if session_data.get('isOnline') else 'offline',
-            'syncStatus': 'synced'
+                'userId': get_username_logged_in(),
+                'sessionId': transcription_id,
+                'timestamp': session_data.get('timestamp'),
+                'progressNote': session_data.get('progressNote', ''),
+                'patientObservation': session_data.get('patientObservation', ''),
+                'medicationAdministered': session_data.get('medicationAdministered', []),
+                'mode': session_mode,
+                'syncStatus': 'synced'
         }
             
             self.table.put_item(Item=item)
-            print(f"✅ Synced to AWS: {transcription_id}")
+            print(f"✅ Data synced to AWS: {transcription_id} (mode: {session_mode})")
             return True
         except Exception as e:
-            print(f"❌ Failed to sync to AWS: {e}")
+            print(f"❌ Data failed to sync to AWS: {e}")
             return False
     #---Sync the pending records---    
     def sync_pending_records(self):
@@ -93,29 +98,22 @@ class AWSSyncManager:
             conn = sqlite3.connect(self.local_db)
             cursor = conn.cursor()
             
-            #Get all transcription sessions that haven't been synced
+            # Get all transcription sessions that haven't been synced either online or offline
 
             cursor.execute('''
-                SELECT transcriptionId FROM transcription_session 
-                WHERE isOnline = 1 AND rowid NOT IN (
-                    SELECT rowid FROM transcription_session WHERE isOnline = 0
-                )
-            ''')
-
-            #TEMPOARY FIX TO FORCE SYNC TRANSCRIPTION MARKED AS OFFLINE
-            cursor.execute('''
-                SELECT transcriptionId FROM transcription_session 
-                WHERE isOffline = 1
+                SELECT transcriptionId FROM transcription_session
             ''')
             
             records_to_sync = cursor.fetchall()
             synced_count = 0
             
-            for (transcription_id,) in records_to_sync:
-                #Get full session data
+            for (transcription_id,) in records_to_sync: #Note: Flag added if online
+                # Get full session data
                 session_data = self.get_session_from_sqlite(transcription_id)
                 
                 if session_data:
+
+                    session_mode = 'online' if session_data.get('isOnline', False) else 'offline'
                     item = {
                         'userId': session_data.get('clinician_name', get_username_logged_in()),
                         'sessionId': transcription_id,
@@ -123,14 +121,14 @@ class AWSSyncManager:
                         'progressNote': session_data.get('progressNote', ''),
                         'patientObservation': session_data.get('patientObservation', ''),
                         'medicationAdministered': session_data.get('medicationAdministered', []),
-                        'mode': 'online' if session_data.get('isOnline') else 'offline',
+                        'mode': session_mode,
                         'syncStatus': 'synced'
                     }
                     
                     try:
                         self.table.put_item(Item=item)
                         synced_count += 1
-                        print(f"✅ Synced: {transcription_id}")
+                        print(f"✅ Synced: {transcription_id} (mode: {session_mode})")
                     except Exception as e:
                         print(f"❌ Failed: {transcription_id} - {e}")
             
@@ -139,7 +137,10 @@ class AWSSyncManager:
         
         except Exception as e:
             print(f"❌ Error syncing pending records: {e}")
+            import traceback
+            traceback.print_exc() # Show full traceback for debugging
             return 0
+        
     #---Get the session from local database---
     def get_session_from_sqlite(self, transcription_id):
         """Retrieve a session from SQLite and flatten for DynamoDB"""
@@ -179,15 +180,19 @@ class AWSSyncManager:
                 WHERE transcriptionId = ?
             ''', (transcription_id,))
             
-            medications = [
-                {
-                    'medicineType': row[0],
-                    'quantity': row[1],
-                    'unit': row[2],
-                    'administrationType': row[3]
+            medications = []
+            for row in cursor.fetchall():
+                medicationdata = {
+                    'medicineType': row[0] if row[0] else 'not specified',
+                    'quantity': row[1] if row[1] else 'not specified',
+                    'unit': row[2] if row[2] else 'not specified',
+                    'administrationType': row[3] if row[3] else 'not specified'
                 }
-                for row in cursor.fetchall()
-            ]
+                # Only add if medicineType is not empty
+                if medicationdata['medicineType']:
+                    medications.append(medicationdata)
+
+
             
             conn.close()
             
@@ -204,5 +209,7 @@ class AWSSyncManager:
             }
         
         except Exception as e:
-            print(f"❌ Error retrieving session: {e}")
+            print(f"❌ Error retrieving and/or syncing session to AWS: {e}")
+            import traceback
+            traceback.print_exc() # Show full traceback for debugging
             return None

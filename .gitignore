@@ -2,6 +2,7 @@
 
 # !!!IMPORTANT - DO NOT REMOVE THIS LINE IF YOU HAVE A .env FILE. FOR SECURITY REASONS, THIS FILE SHOULD NOT BE TRACKED BY GIT.!!!
 .env
+key.json
 
 # Python cache
 __pycache__/
@@ -27,5 +28,5 @@ clinical_transcription.db
 
 # Generated files (Optional)
 #datastore/
-#session.json
+session.json
 #data.json
