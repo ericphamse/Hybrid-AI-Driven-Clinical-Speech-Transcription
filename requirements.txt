@@ -13,3 +13,10 @@ text2num
 reportlab
 pdf2image
 pypdfium2
+pyaudio
+wave
+text
+text2num
+sqlite3
+outlines
+pydantic
