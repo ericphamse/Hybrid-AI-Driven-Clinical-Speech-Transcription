@@ -74,6 +74,7 @@ class ReportEntry(BoxLayout):
 class StructuringPanel(BoxLayout):
 
     def on_save_session_pressed(self):
+        create_pdf()
         app = App.get_running_app()
         app.root.current = 'pdf_preview'
 
