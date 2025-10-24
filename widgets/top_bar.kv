@@ -11,15 +11,45 @@
             size: self.size
             pos: self.pos
 
-    Label:
-        text: root.network_status == True and 'Status: Online' or 'Status: Offline'
-        font_size: 16
-        bold: True
-        color: root.network_status == True and (0.1, 0.7, 0.3, 1) or (0.7, 0.1, 0.1, 1)
-        halign: 'left'
-        valign: 'middle'
-        text_size: self.size
-        size_hint_x: 0.18
+
+    BoxLayout:
+        orientation: 'horizontal'
+        size_hint_x: 0.25
+        spacing: 10
+        ToggleButton:
+            id: mode_toggle
+            size_hint_x: None
+            size_hint_y: None
+            width: 48
+            height: 28
+            background_color: 0, 0, 0, 0
+            color: 0, 0, 0, 0
+            disabled: not root.network_status
+            on_state: root.on_toggle_mode(self.state)
+            padding: [0, 0]
+            pos_hint: {"center_y": 0.5}
+            canvas.before:
+                Color:
+                    rgba: (0.2, 0.8, 0.4, 1) if self.state == 'down' else (0.95, 0.2, 0.2, 1)
+                RoundedRectangle:
+                    pos: (self.x, self.y)
+                    size: (self.width, self.height)
+                    radius: [self.height/2,]
+                Color:
+                    rgba: 1, 1, 1, 1
+                Ellipse:
+                    size: (self.height-10, self.height-10)
+                    pos: (self.x + self.width - self.height + 5 if self.state == 'down' else self.x + 5, self.y + 5)
+
+        Label:
+            text: root.network_status == True and 'Status: Online' or 'Status: Offline'
+            font_size: 16
+            bold: True
+            color: root.network_status == True and (0.1, 0.7, 0.3, 1) or (0.7, 0.1, 0.1, 1)
+            halign: 'left'
+            valign: 'middle'
+            text_size: self.size
+        
 
     Label:
         text: 'Medical Transcription App'
@@ -30,6 +60,7 @@
         valign: 'middle'
         text_size: self.size
         size_hint_x: 0.64
+
 
     Button:
         text: 'Logout'

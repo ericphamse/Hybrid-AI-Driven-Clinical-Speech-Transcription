@@ -13,6 +13,7 @@ class TopBar(BoxLayout):
     network_status = BooleanProperty(False)
     previous_network = False
     clinician_name = StringProperty('')
+    workflow_mode = StringProperty('offline')  # 'online' or 'offline'
     dynamodb = boto3.resource('dynamodb', region_name ="ap-southeast-2")
 
     def __init__(self, **kwargs):
@@ -20,17 +21,21 @@ class TopBar(BoxLayout):
         self.check_connection()
         # Schedule periodic rechecks every 3 seconds
         Clock.schedule_interval(self.periodic_check, 3)
+        # Default to offline until proven otherwise
+        self.workflow_mode = 'offline'
 
     def periodic_check(self, dt):
         self.check_connection()
-    def check_connection(self):
 
+    def check_connection(self):
         def check():
             try:
                 # Try to connect to a public DNS server
                 socket.create_connection(("8.8.8.8", 53), timeout=2)
                 self.previous_network = self.network_status
                 self.network_status = True
+                # If user was forced to offline due to no connection, allow online again
+                # (do not auto-switch mode, just enable toggle)
                 # if self.previous_network == False:
                 #     if os.path.exists("clinical_transcription.db"):
                 #         # run sync
@@ -52,8 +57,16 @@ class TopBar(BoxLayout):
                 #         print("offline.db not found — skipping sync")
             except Exception:
                 self.network_status = False
-
+                # If user is in online mode but connection is lost, force offline
+                if self.workflow_mode == 'online':
+                    self.workflow_mode = 'offline'
         threading.Thread(target=check, daemon=True).start()
+    def on_toggle_mode(self, state):
+        # Only allow switching to online if network is up
+        if state == 'down' and self.network_status:
+            self.workflow_mode = 'online'
+        else:
+            self.workflow_mode = 'offline'
 
     def logout(self):
         app = App.get_running_app()
