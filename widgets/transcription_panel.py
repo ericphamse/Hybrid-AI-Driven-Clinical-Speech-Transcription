@@ -342,15 +342,33 @@ class TranscriptionPanel(BoxLayout):
                     result = struct_panel.generate_json(text, self.transcription_id, time_string)        
                     Clock.schedule_once(lambda dt: struct_panel.load_json_data())
                     Clock.schedule_once(lambda dt: struct_panel.update_log_display())
+                    Clock.schedule_once(lambda dt: self.trigger_aws_sync(), 1.0)  # Sync after 1 second
                 threading.Thread(target=task, daemon=True).start()
             else:
                 def task2():
                     result = struct_panel.format_with_claude(self.bedrock, self.CLAUDE_37_SONNET_ARN,text, self.transcription_id, time_string)
                     Clock.schedule_once(lambda dt: struct_panel.load_json_data())
                     Clock.schedule_once(lambda dt: struct_panel.update_log_display())
+                    Clock.schedule_once(lambda dt: self.trigger_aws_sync(), 1.0)  # Sync after 1 second
                 threading.Thread(target=task2, daemon=True).start()
         text_input.text = ''
         deleteAllRecordings()
+
+    def trigger_aws_sync(self):
+            """Attempt to sync pending records to AWS"""
+            try:
+                from aws_sync_manager import AWSSyncManager
+                sync_manager = AWSSyncManager()
+                
+                if sync_manager.check_aws_connectivity():
+                    synced = sync_manager.sync_pending_records()
+                    if synced > 0:
+                        print(f"✅ Synced {synced} records to AWS")
+                else:
+                    print("⚠️ AWS not available, records remain as-is locally")
+            except Exception as e:
+                print(f"⚠️ Sync attempt failed: {e}")
+
 def deleteAllRecordings():
     # Build the full path safely
     print("Waiting 3 seconds before deleting recordings...")

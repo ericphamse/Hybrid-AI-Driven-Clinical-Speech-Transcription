@@ -200,8 +200,22 @@ class LocalDatabase:
                     session_data["medicalNoteStructure"]["medicationAdministered"]["administrationType"]))
         conn.commit()
         conn.close()
-        
-     #Get  session details.
+
+        #After successful save, attempt AWS sync call
+        try:
+            from aws_sync_manager import AWSSyncManager
+            sync_manager = AWSSyncManager()
+            
+            #If online, push directly; if offline, it will batch sync later
+            if session_data.get("isOnline"):
+                sync_manager.save_to_dynamodb(tids, session_data)
+            else:
+                print(f"⚠️ Offline mode: Record {tids} saved locally, will sync when online")
+        except Exception as e:
+            print(f"⚠️ AWS sync skipped: {e}")
+
+
+     #Get session details.
     def printPath():
         DATASTORE_DIR = os.path.join(os.getcwd(), "datastore")
         print("Current working directory:", DATASTORE_DIR)
