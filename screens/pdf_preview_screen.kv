@@ -1,0 +1,36 @@
+#:kivy 2.0.0
+<PDFPreviewScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: [20, 20]
+        spacing: 20
+        ScrollView:
+            size_hint_y: 0.8
+            do_scroll_x: False
+            do_scroll_y: True
+            GridLayout:
+                id: preview_box
+                cols: 1
+                size_hint_y: None
+                height: self.minimum_height
+        BoxLayout:
+            orientation: 'horizontal'
+            size_hint_y: 0.2
+            spacing: 20
+            Button:
+                text: 'Print'
+                font_size: 16
+                size_hint: None, None
+                size: 100, 36
+                disabled: True
+                background_color: 0.5, 0.5, 0.5, 1
+                color: 1, 1, 1, 1
+            Button:
+                text: 'Return'
+                font_size: 16
+                size_hint: None, None
+                size: 100, 36
+                background_color: 0.2, 0.4, 0.2, 1
+                color: 1, 1, 1, 1
+                on_press: 
+                	root.manager.current = 'main'

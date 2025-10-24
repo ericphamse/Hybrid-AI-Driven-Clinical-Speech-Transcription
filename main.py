@@ -13,6 +13,7 @@ import requests
 # Import LoginScreen and MainScreen from screens
 from screens.loginscreen import LoginScreen
 from screens.main_screen import MainScreen
+from screens.pdf_preview_screen import PDFPreviewScreen
 from kivy.lang import Builder
 
 class RootWidget(ScreenManager):
@@ -243,12 +244,14 @@ class MedicalApp(App):
 
     def build(self):
         self.session_data = {'clinician_name': '', 'log_entries': []}
-        # Explicitly load the KV file for LoginScreen and MainScreen
+        # Explicitly load the KV file for LoginScreen, MainScreen, and PDFPreviewScreen
         Builder.load_file('screens/loginscreen.kv')
         Builder.load_file('screens/main_screen.kv')
+        Builder.load_file('screens/pdf_preview_screen.kv')
         root = RootWidget()
         root.add_widget(LoginScreen(name='login'))
         root.add_widget(MainScreen(name='main'))
+        root.add_widget(PDFPreviewScreen(name='pdf_preview'))
         return root
 
     def save_session_to_json(self):
@@ -262,6 +265,16 @@ class MedicalApp(App):
 
     def on_start(self):
         self.load_session_from_json()
-
+    def on_stop(self):
+        db_path = os.path.join(os.getcwd(), "clinical_transcription.db")
+        
+        if os.path.exists(db_path):
+            try:
+                os.remove(db_path)
+                print("Deleted.")
+            except Exception as e:
+                print("Couldn't Delete.")
+        else:
+            print("No database Found.")
 if __name__ == '__main__':
     MedicalApp().run()
