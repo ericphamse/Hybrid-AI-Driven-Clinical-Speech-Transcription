@@ -4,11 +4,15 @@
         orientation: 'vertical'
         padding: [20, 20]
         spacing: 20
-        Label:
-            text: 'PDF Preview Placeholder'
-            font_size: 24
-            color: 0.2, 0.2, 0.2, 1
+        ScrollView:
             size_hint_y: 0.8
+            do_scroll_x: False
+            do_scroll_y: True
+            GridLayout:
+                id: preview_box
+                cols: 1
+                size_hint_y: None
+                height: self.minimum_height
         BoxLayout:
             orientation: 'horizontal'
             size_hint_y: 0.2
