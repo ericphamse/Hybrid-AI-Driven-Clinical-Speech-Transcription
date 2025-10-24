@@ -197,16 +197,25 @@ class StructuringPanel(BoxLayout):
             po["otherObservations"] = wholeString
         
         # Combine into medicationAdministered
-        wholeString = str(result["medicalNoteStructure"]["medicationAdministered"][0]["quantity"])
-        if result["medicalNoteStructure"]["medicationAdministered"][0]["unit"] is not None:
-            wholeString += result["medicalNoteStructure"]["medicationAdministered"][0]["unit"]
+        #wholeString = str(result["medicalNoteStructure"]["medicationAdministered"][0]["quantity"])
+        #if result["medicalNoteStructure"]["medicationAdministered"][0]["unit"] is not None:
+        #    wholeString += result["medicalNoteStructure"]["medicationAdministered"][0]["unit"]
+        med_result = result["medicalNoteStructure"]["medicationAdministered"][0]
+
         ma = {}
         ma["transcriptionId"] = tids
         ma["timestamp"] = time_string
-        ma["medicineType"] = result["medicalNoteStructure"]["medicationAdministered"][0]["medicineType"]
-        ma["quantity"] = str(result["medicalNoteStructure"]["medicationAdministered"][0]["quantity"])
-        ma["unit"] = result["medicalNoteStructure"]["medicationAdministered"][0]["unit"]
-        ma["administrationType"] = result["medicalNoteStructure"]["medicationAdministered"][0]["administrationType"]
+        ma["medicineType"] = med_result.get("medicineType") or ""
+        ma["quantity"] = str(med_result.get("quantity", ""))
+        ma["unit"] = med_result.get("unit") or ""
+        ma["administrationType"] = med_result.get("administrationType") or ""
+
+                # DEBUG: Print what we got
+        print(f"🔍 Medication extracted from Claude:")
+        print(f"   medicineType: {ma['medicineType']}")
+        print(f"   quantity: {ma['quantity']}")
+        print(f"   unit: {ma['unit']}")
+        print(f"   administrationType: {ma['administrationType']}")
         
         self.load_clinician_name()
         # Combine generic info
@@ -221,12 +230,18 @@ class StructuringPanel(BoxLayout):
         allData["userId"] = "test"
         allData["timestamp"] = globalTime
         allData["rawTranscriptionId"] = "WhatsThisFor?"
-        allData["isOnline"] = False
-        allData["isOffline"] = True
+        allData["isOnline"] = True
+        allData["isOffline"] = False
         allData["medicalNoteStructure"] = {}
         allData["medicalNoteStructure"]["progressNote"] = pn
         allData["medicalNoteStructure"]["patientObservation"] = po
         allData["medicalNoteStructure"]["medicationAdministered"] = ma
+
+        # DEBUGGING: Print flag before saving
+        print(f"\n🔍 DEBUG allData before save:")
+        print(f"   isOnline: {allData['isOnline']}")
+        print(f"   isOffline: {allData['isOffline']}")
+
         db = LocalDatabase
         db.save_transcription_session(tids, allData)
         
@@ -422,8 +437,8 @@ class StructuringPanel(BoxLayout):
         allData["userId"] = "test"
         allData["timestamp"] = globalTime
         allData["rawTranscriptionId"] = "WhatsThisFor?"
-        allData["isOnline"] = False
-        allData["isOffline"] = True
+        allData["isOnline"] = True
+        allData["isOffline"] = False
         allData["medicalNoteStructure"] = {}
         allData["medicalNoteStructure"]["progressNote"] = pn
         allData["medicalNoteStructure"]["patientObservation"] = po
