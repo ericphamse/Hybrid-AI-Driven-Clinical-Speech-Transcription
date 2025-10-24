@@ -8,3 +8,5 @@ boto3
 scipy
 pyrnnoise
 watchdog
+text2num
+reportlab
